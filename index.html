@@ -1,53 +1,29 @@
 <!DOCTYPE html>
-<html lang="th">
+<html>
 <head>
   <meta charset="utf-8">
-  <title>LIFF Redirect + Kissflow Form Embed</title>
+  <title>LIFF Redirect</title>
   <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
 </head>
 <body>
   <h2>กำลังเข้าสู่ระบบ...</h2>
-
-  <!-- ✅ Kissflow Public Form ที่เราจะฝัง -->
-  <iframe id="kissflowForm"
-    src="https://development-v45group.kissflow.com/public/Process/Pfd845ae36-b041-41f0-b8da-088a8b55934a"
-    width="780"
-    height="812"
-    frameborder="0"
-    marginheight="0"
-    marginwidth="0">
-    Loading...
-  </iframe>
-
   <script>
     async function main() {
       try {
-        // 1️⃣ เริ่มต้น LIFF SDK
-        await liff.init({ liffId: "2008283290-7RLYvkdG" });
+        await liff.init({ liffId: "2008283290-7RLYvkdG" }); // ต้องเปลี่ยน Liff ตามที่สร้างใน Line
 
-        // 2️⃣ ถ้ายังไม่ล็อกอินให้ล็อกอินก่อน
         if (!liff.isLoggedIn()) {
           liff.login();
           return;
         }
 
-        // 3️⃣ ดึงโปรไฟล์จาก LINE
         const profile = await liff.getProfile();
         const userId = profile.userId;
-        console.log("LINE userId:", userId);
 
-        // 4️⃣ ส่ง userId เข้า iframe (Public Form)
-        const iframe = document.getElementById("kissflowForm");
+        // ✅ กำหนด URL ปลายทางที่จะ redirect พร้อมแนบ userId
+        const targetURL = `https://development-v45group.kissflow.com/public/Process/Pfd845ae36-b041-41f0-b8da-088a8b55934a?userId=${encodeURIComponent(userId)}`; // URL ของเว็บที่เราจะให้ไปกดลงทะเบียน
 
-        // สร้าง URL ใหม่พร้อม query string
-        const baseUrl = "https://development-v45group.kissflow.com/public/Process/Pfd845ae36-b041-41f0-b8da-088a8b55934a";
-        const urlWithParam = `${baseUrl}?Line_ID=${encodeURIComponent(userId)}`;
-
-        // เปลี่ยน src ของ iframe หลังจาก login สำเร็จ
-        iframe.src = urlWithParam;
-
-        // อัปเดตข้อความหน้าจอ
-        document.querySelector("h2").innerText = "✅ เข้าสู่ระบบแล้ว กำลังโหลดฟอร์ม...";
+        window.location.href = targetURL; // 🔁 Redirect ไปยัง Kissflow Page
       } catch (err) {
         document.body.innerHTML = `<h3 style="color:red">❌ เกิดข้อผิดพลาด: ${err.message}</h3>`;
         console.error(err);
