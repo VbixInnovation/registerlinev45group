@@ -229,6 +229,39 @@
   const thankYou = document.getElementById("thankYouMessage");
   const formSection = document.getElementById("formSection");
 
+  const fileInput = document.getElementById("fileUpload");
+
+  async function fileToBase64(file) {
+    const arrayBuffer = await file.arrayBuffer();
+    let binary = "";
+    const bytes = new Uint8Array(arrayBuffer);
+    const chunkSize = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.subarray(i, i + chunkSize);
+      binary += String.fromCharCode(...chunk);
+    }
+    return btoa(binary);
+  }
+
+  async function buildAttachmentPayload(files) {
+    if (!files || files.length === 0) {
+      return [];
+    }
+
+    const attachments = [];
+
+    for (const file of files) {
+      const base64Data = await fileToBase64(file);
+      attachments.push({
+        FileName: file.name,
+        ContentType: file.type || "application/octet-stream",
+        Data: base64Data
+      });
+    }
+
+    return attachments;
+  }
+
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     spinner.style.display = "block";
@@ -237,16 +270,16 @@
     const contactName = document.getElementById("contactName").value;
     const contractNo = document.getElementById("contactPhone").value;
     const lineId = document.getElementById("lineId").value;
+    const attachments = await buildAttachmentPayload(fileInput.files);
 
-    const payload = JSON.stringify(
-      {
-        Contractor_Name: contractorName,
-        Technician_Name: contactName,
-        Contract_No: contractNo,
-        Line_ID: lineId,
-        UserID: userId
-      }
-    );
+    const payload = JSON.stringify({
+      Contractor_Name: contractorName,
+      Technician_Name: contactName,
+      Contract_No: contractNo,
+      Line_ID: lineId,
+      UserID: userId,
+      Attachments: attachments
+    });
 
     try {
       const endpoint = "https://development-v45group.kissflow.com/process/2/AcBm1i3UZPmE/Contractor_Task_Revision_A00/create/submit";
