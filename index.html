@@ -233,49 +233,38 @@
     event.preventDefault();
     spinner.style.display = "block";
 
-    // ✅ เก็บค่าจากฟอร์ม
     const contractorName = document.getElementById("company").value;
     const contactName = document.getElementById("contactName").value;
     const contractNo = document.getElementById("contactPhone").value;
     const lineId = document.getElementById("lineId").value;
 
-    // ✅ headers จากตัวอย่างของคุณ
-    const myHeaders = new Headers();
-    myHeaders.append("X-Access-Key-Id", "Ak398fdc64-143d-48b5-8237-0f6403b4f6a6");
-    myHeaders.append("X-Access-Key-Secret", "rRGLEzJ0SFbbYC7jsSLsA84H1xCFZvTYS8PDUD2x1OcsTP4LEgP9-9ZHaiVdloVVmSvlM69nMdTVAY3eVPauPQ");
-    myHeaders.append("Content-Type", "application/json");
-
-    // ✅ body แบบ JSON (ใช้ค่าจากผู้ใช้)
-    const raw = JSON.stringify([{
-      "Contract_No": contractNo,
-      "Contractor_Name": contractorName,
-      "Technician_Name": contactName,
-      "Line_ID": lineId,
-      "UserID": userId
-    }]);
-
-    const requestOptions = {
+    // ✅ ส่งข้อมูลไป Apps Script Proxy
+    fetch("https://script.google.com/macros/s/AKfycbw5GYWCt8FOCyM9JbbRT6MWRzn9-H1EOreFj2MjH6MreuywZYcs_Vl5d5rHmVkpygeZng/exec", {
       method: "POST",
-      headers: myHeaders,
-      body: raw,
-    };
-
-    // ✅ fetch API
-    fetch("https://development-v45group.kissflow.com/process/2/AcBm1i3UZPmE/Contractor_Task_Revision_A00/create/submit", requestOptions)
-      .then((response) => response.text())
-      .then((result) => {
-        console.log("✅ Kissflow Response:", result);
-        spinner.style.display = "none";
-        formSection.style.display = "none";
-        thankYou.style.display = "block";
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        Contractor_Name: contractorName,
+        Technician_Name: contactName,
+        Contract_No: contractNo,
+        Line_ID: lineId,
+        UserID: userId
       })
-      .catch((error) => {
-        spinner.style.display = "none";
-        console.error("❌ Error:", error);
-        alert("เกิดข้อผิดพลาดในการส่งข้อมูล");
-      });
+    })
+    .then(res => res.text())
+    .then(result => {
+      console.log("✅ Sent via Proxy:", result);
+      spinner.style.display = "none";
+      formSection.style.display = "none";
+      thankYou.style.display = "block";
+    })
+    .catch(error => {
+      spinner.style.display = "none";
+      console.error("❌ Error:", error);
+      alert("เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาลองอีกครั้ง");
+    });
   });
 </script>
+
 
 </body>
 </html>
