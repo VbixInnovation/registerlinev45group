@@ -1,12 +1,163 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 <head>
-  <meta charset="utf-8">
-  <title>LIFF Redirect</title>
-  <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>การแก้ไขงานของผู้รับเหมา</title>
+  <style>
+    body {
+      font-family: "Prompt", sans-serif;
+      background-color: #f5f7fa;
+      margin: 0;
+      padding: 40px;
+      color: #333;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      padding: 40px 50px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 30px;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 15px;
+    }
+
+    .header img {
+      width: 50px;
+      height: 50px;
+      border-radius: 8px;
+      margin-right: 15px;
+    }
+
+    .header h2 {
+      margin: 0;
+      color: #1d3557;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+    }
+
+    label {
+      font-weight: 600;
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    input[type="text"],
+    input[type="tel"],
+    input[type="file"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+
+    input:focus {
+      border-color: #457b9d;
+      outline: none;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 20px;
+    }
+
+    .form-row > div {
+      flex: 1;
+    }
+
+    .upload-box {
+      border: 2px dashed #cbd5e1;
+      background: #f8fafc;
+      padding: 30px;
+      text-align: center;
+      border-radius: 8px;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .upload-box:hover {
+      background: #eef2f7;
+      border-color: #457b9d;
+    }
+
+    button {
+      background-color: #457b9d;
+      color: white;
+      border: none;
+      padding: 14px 0;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background-color: #1d3557;
+    }
+
+    @media (max-width: 600px) {
+      .form-row {
+        flex-direction: column;
+      }
+    }
+  </style>
 </head>
 <body>
-  <h2>กำลังเข้าสู่ระบบ...</h2>
+  <div class="container">
+    <div class="header">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/a/ac/No_image_available.svg" alt="Logo">
+      <h2>การแก้ไขงานของผู้รับเหมา</h2>
+    </div>
+
+    <form>
+      <h3>แจ้งรายละเอียดการแก้ไข</h3>
+
+      <div>
+        <label>บริษัทผู้รับเหมา *</label>
+        <input type="text" placeholder="กรอกชื่อบริษัทผู้รับเหมา" required>
+      </div>
+
+      <div class="form-row">
+        <div>
+          <label>ชื่อผู้ติดต่อ *</label>
+          <input type="text" placeholder="ชื่อผู้ติดต่อ" required>
+        </div>
+        <div>
+          <label>เบอร์ติดต่อ *</label>
+          <input type="tel" placeholder="เบอร์ติดต่อ" required>
+        </div>
+      </div>
+
+      <div>
+        <label>Line ID</label>
+        <input type="text" placeholder="Line ID">
+      </div>
+
+      <div>
+        <label>แนบเอกสารเพิ่มเติม *</label>
+        <div class="upload-box">
+          <input type="file" multiple>
+          <p>ลากไฟล์มาวางที่นี่ หรือคลิกเพื่ออัปโหลด</p>
+        </div>
+      </div>
+
+      <button type="submit">Submit</button>
+    </form>
+  </div>
   <script>
     async function main() {
       try {
@@ -18,13 +169,12 @@
         }
 
         const profile = await liff.getProfile();
-        console.log(profile)
         const userId = profile.userId;
 
         // ✅ กำหนด URL ปลายทางที่จะ redirect พร้อมแนบ userId
-        const targetURL = `https://development-v45group.kissflow.com/public/Process/Pfd845ae36-b041-41f0-b8da-088a8b55934a?userId=${encodeURIComponent(userId)}`; // URL ของเว็บที่เราจะให้ไปกดลงทะเบียน
+        // const targetURL = `https://development-v45group.kissflow.com/public/Process/Pfd845ae36-b041-41f0-b8da-088a8b55934a?userId=${encodeURIComponent(userId)}`; // URL ของเว็บที่เราจะให้ไปกดลงทะเบียน
 
-        window.location.href = targetURL; // 🔁 Redirect ไปยัง Kissflow Page
+        // window.location.href = targetURL; // 🔁 Redirect ไปยัง Kissflow Page
       } catch (err) {
         document.body.innerHTML = `<h3 style="color:red">❌ เกิดข้อผิดพลาด: ${err.message}</h3>`;
         console.error(err);
