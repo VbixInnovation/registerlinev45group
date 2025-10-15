@@ -229,6 +229,15 @@
   const thankYou = document.getElementById("thankYouMessage");
   const formSection = document.getElementById("formSection");
 
+  function readFileAsBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+  }
+
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     spinner.style.display = "block";
@@ -237,36 +246,67 @@
     const contactName = document.getElementById("contactName").value;
     const contractNo = document.getElementById("contactPhone").value;
     const lineId = document.getElementById("lineId").value;
+    const files = Array.from(document.getElementById("fileUpload").files || []);
 
-    // ✅ ส่งข้อมูลไป Apps Script Proxy
-    fetch("https://development-v45group.kissflow.com/process/2/AcBm1i3UZPmE/Contractor_Task_Revision_A00/create/submit", {
-    method: "POST",
-     headers: {
-        "X-Access-Key-Id": "Ak398fdc64-143d-48b5-8237-0f6403b4f6a6",
-        "X-Access-Key-Secret": "rRGLEzJ0SFbbYC7jsSLsA84H1xCFZvTYS8PDUD2x1OcsTP4LEgP9-9ZHaiVdloVVmSvlM69nMdTVAY3eVPauPQ",
-      },
-      body: JSON.stringify([
-        {
-          Contractor_Name: contractorName,
-          Technician_Name: contactName,
-          Contract_No: contractNo,
-          Line_ID: lineId,
-          UserID: userId
-        }
-      ])
-    })
-    .then(res => res.text())
-    .then(result => {
-      console.log("✅ Sent via Proxy:", result);
+    let attachments = [];
+    try {
+      attachments = await Promise.all(
+        files.map(async (file) => {
+          const base64 = await readFileAsBase64(file);
+          const [, content = ""] = base64.split(",");
+          return {
+            FileName: file.name,
+            MimeType: file.type || "application/octet-stream",
+            Content: content
+          };
+        })
+      );
+    } catch (fileError) {
+      console.error("❌ File read error:", fileError);
+      alert("เกิดข้อผิดพลาดในการอ่านไฟล์ กรุณาลองอีกครั้ง");
       spinner.style.display = "none";
+      return;
+    }
+
+    const payload = JSON.stringify([
+      {
+        Contractor_Name: contractorName,
+        Technician_Name: contactName,
+        Contract_No: contractNo,
+        Line_ID: lineId,
+        UserID: userId,
+        Attachments: attachments
+      }
+    ]);
+
+    try {
+      const endpoint = "https://development-v45group.kissflow.com/process/2/AcBm1i3UZPmE/Contractor_Task_Revision_A00/create/submit";
+      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(endpoint)}`;
+
+      const response = await fetch(proxyUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Access-Key-Id": "Ak398fdc64-143d-48b5-8237-0f6403b4f6a6",
+          "X-Access-Key-Secret": "rRGLEzJ0SFbbYC7jsSLsA84H1xCFZvTYS8PDUD2x1OcsTP4LEgP9-9ZHaiVdloVVmSvlM69nMdTVAY3eVPauPQ",
+          "X-Requested-With": "XMLHttpRequest"
+        },
+        body: payload
+      });
+
+      if (!response.ok) {
+        throw new Error(`Request failed: ${response.status} ${response.statusText}`);
+      }
+
+      console.log("✅ Sent via Proxy:", await response.text());
       formSection.style.display = "none";
       thankYou.style.display = "block";
-    })
-    .catch(error => {
-      spinner.style.display = "none";
+    } catch (error) {
       console.error("❌ Error:", error);
       alert("เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาลองอีกครั้ง");
-    });
+    } finally {
+      spinner.style.display = "none";
+    }
   });
 </script>
 
