@@ -109,7 +109,6 @@
       background-color: #1d3557;
     }
 
-    /* Thank You Section */
     .thank-you {
       display: none;
       text-align: center;
@@ -126,15 +125,8 @@
       color: #555;
       font-size: 18px;
     }
-
-    @media (max-width: 600px) {
-      .form-row {
-        flex-direction: column;
-      }
-    }
   </style>
 
-  <!-- LINE LIFF SDK -->
   <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
 </head>
 <body>
@@ -144,7 +136,6 @@
       <h2>การแก้ไขงานของผู้รับเหมา</h2>
     </div>
 
-    <!-- ✅ ฟอร์ม -->
     <div id="formSection">
       <form id="contractorForm">
         <h3>แจ้งรายละเอียดการแก้ไข</h3>
@@ -182,7 +173,6 @@
       </form>
     </div>
 
-    <!-- ✅ ข้อความ Thank You -->
     <div class="thank-you" id="thankYouMessage">
       <h2>✅ ขอบคุณที่กรอกข้อมูล</h2>
       <p>ระบบได้รับข้อมูลของคุณเรียบร้อยแล้ว</p>
@@ -190,36 +180,30 @@
   </div>
 
   <script>
-    let userId = ""; // จะเก็บ userId จาก LINE
+    let userId = "";
 
-    // 🚀 เริ่มต้น LIFF
     async function main() {
       try {
-        await liff.init({ liffId: "2008283290-7RLYvkdG" }); // ✅ ใช้ LIFF ID ของคุณ
-
+        await liff.init({ liffId: "2008283290-7RLYvkdG" });
         if (!liff.isLoggedIn()) {
           liff.login();
           return;
         }
-
         const profile = await liff.getProfile();
-        userId = profile.userId; // ✅ เก็บ userId ไว้ใช้ตอนส่ง API
-        console.log("User Profile:", profile);
-
+        userId = profile.userId;
+        console.log("LINE User ID:", userId);
       } catch (err) {
-        document.body.innerHTML = `<h3 style="color:red">❌ เกิดข้อผิดพลาด: ${err.message}</h3>`;
-        console.error(err);
+        console.error("LIFF error:", err);
       }
     }
 
     main();
 
-    // ✅ ฟังก์ชัน Submit Form
     const form = document.getElementById("contractorForm");
     const thankYou = document.getElementById("thankYouMessage");
     const formSection = document.getElementById("formSection");
 
-    form.addEventListener("submit", async function (event) {
+    form.addEventListener("submit", async (event) => {
       event.preventDefault();
 
       const data = {
@@ -227,31 +211,37 @@
         contactName: document.getElementById("contactName").value,
         contactPhone: document.getElementById("contactPhone").value,
         lineId: document.getElementById("lineId").value,
-        userId: userId, // ✅ แนบ userId จาก LINE ด้วย
+        userId: userId
       };
 
-      console.log("📤 Data to send:", data);
+      console.log("📤 Sending to Kissflow:", data);
 
-      // 🔥 ส่งข้อมูลไป API
       try {
-        const response = await fetch("https://your-api-endpoint.com/submit", {
+        const response = await fetch("https://v45group.kissflow.com/api/process/Contractor_Task_Revision_A00/item/", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "X-Access-Key-Id": "Ak398fdc64-143d-48b5-8237-0f6403b4f6a6",
+            "X-Access-Key-Secret": "rRGLEzJ0SFbbYC7jsSLsA84H1xCFZvTYS8PDUD2x1OcsTP4LEgP9-9ZHaiVdloVVmSvlM69nMdTVAY3eVPauPQ",
+            "account_id": "AcBm1i3NlfFk"
           },
-          body: JSON.stringify(data),
+          body: JSON.stringify({
+            data: {
+              Company_Name: data.company,
+              Contact_Name: data.contactName,
+              Phone: data.contactPhone,
+              Line_ID: data.lineId,
+              Line_UserID: data.userId
+            }
+          })
         });
 
-        if (response.ok) {
-          console.log("✅ ส่งข้อมูลสำเร็จ");
-        } else {
-          console.error("❌ การส่งข้อมูลล้มเหลว:", response.statusText);
-        }
-      } catch (err) {
-        console.error("❌ Error:", err);
+        const result = await response.json();
+        console.log("✅ Kissflow response:", result);
+      } catch (error) {
+        console.error("❌ Error sending to Kissflow:", error);
       }
 
-      // 🔄 แสดงหน้าขอบคุณ
       formSection.style.display = "none";
       thankYou.style.display = "block";
     });
