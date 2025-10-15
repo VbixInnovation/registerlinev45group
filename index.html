@@ -18,13 +18,15 @@
         }
 
         const profile = await liff.getProfile();
+        const openid = await liff.getOpenid();
         console.log(profile)
+        console.log(openid)
         const userId = profile.userId;
 
         // ✅ กำหนด URL ปลายทางที่จะ redirect พร้อมแนบ userId
         // const targetURL = `https://development-v45group.kissflow.com/public/Process/Pfd845ae36-b041-41f0-b8da-088a8b55934a?userId=${encodeURIComponent(userId)}`; // URL ของเว็บที่เราจะให้ไปกดลงทะเบียน
 
-        window.location.href = targetURL; // 🔁 Redirect ไปยัง Kissflow Page
+        // window.location.href = targetURL; // 🔁 Redirect ไปยัง Kissflow Page
       } catch (err) {
         document.body.innerHTML = `<h3 style="color:red">❌ เกิดข้อผิดพลาด: ${err.message}</h3>`;
         console.error(err);
