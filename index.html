@@ -238,7 +238,7 @@
     const contractNo = document.getElementById("contactPhone").value;
     const lineId = document.getElementById("lineId").value;
 
-    const payload = JSON.stringify([
+    const payload = JSON.stringify(
       {
         Contractor_Name: contractorName,
         Technician_Name: contactName,
@@ -246,7 +246,7 @@
         Line_ID: lineId,
         UserID: userId
       }
-    ]);
+    );
 
     try {
       const endpoint = "https://development-v45group.kissflow.com/process/2/AcBm1i3UZPmE/Contractor_Task_Revision_A00/create/submit";
