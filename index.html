@@ -239,17 +239,22 @@
     const lineId = document.getElementById("lineId").value;
 
     // ✅ ส่งข้อมูลไป Apps Script Proxy
-    fetch("https://script.google.com/macros/s/AKfycbw5GYWCt8FOCyM9JbbRT6MWRzn9-H1EOreFj2MjH6MreuywZYcs_Vl5d5rHmVkpygeZng/exec", {
-  "method": "POST",
-  "mode": "cors",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        Contractor_Name: contractorName,
-        Technician_Name: contactName,
-        Contract_No: contractNo,
-        Line_ID: lineId,
-        UserID: userId
-      })
+    fetch("https://development-v45group.kissflow.com/process/2/AcBm1i3UZPmE/Contractor_Task_Revision_A00/create/submit", {
+    method: "POST",
+     headers: {
+        "X-Access-Key-Id": "Ak398fdc64-143d-48b5-8237-0f6403b4f6a6",
+        "X-Access-Key-Secret": "rRGLEzJ0SFbbYC7jsSLsA84H1xCFZvTYS8PDUD2x1OcsTP4LEgP9-9ZHaiVdloVVmSvlM69nMdTVAY3eVPauPQ",
+        "account_id": "AcBm1i3UZPmE"
+      },
+      body: JSON.stringify([
+        {
+          Contractor_Name: contractorName,
+          Technician_Name: contactName,
+          Contract_No: contractNo,
+          Line_ID: lineId,
+          UserID: userId
+        }
+      ])
     })
     .then(res => res.text())
     .then(result => {
