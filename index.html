@@ -3,65 +3,90 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>การแก้ไขงานของผู้รับเหมา</title>
+  <title>การแก้ไขงานของผู้รับเหมา | V45 Group</title>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: "Prompt", sans-serif;
-      background-color: #f5f7fa;
+      background: linear-gradient(135deg, #e8f0fe 0%, #ffffff 100%);
       margin: 0;
-      padding: 40px;
+      padding: 0;
       color: #333;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
     .container {
-      max-width: 900px;
-      margin: auto;
       background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      border-radius: 16px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      width: 95%;
+      max-width: 720px;
       padding: 40px 50px;
+      animation: fadeIn 0.8s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .header {
       display: flex;
       align-items: center;
+      justify-content: center;
+      flex-direction: column;
       margin-bottom: 30px;
-      border-bottom: 2px solid #eee;
-      padding-bottom: 15px;
+      text-align: center;
     }
 
     .header img {
-      width: 50px;
-      height: 50px;
-      border-radius: 8px;
-      margin-right: 15px;
+      width: 70px;
+      height: 70px;
+      margin-bottom: 10px;
     }
 
     .header h2 {
-      margin: 0;
       color: #1d3557;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .header p {
+      color: #666;
+      font-size: 15px;
     }
 
     form {
       display: flex;
       flex-direction: column;
-      gap: 25px;
+      gap: 22px;
     }
 
     label {
       font-weight: 600;
-      margin-bottom: 5px;
+      margin-bottom: 6px;
       display: block;
+      color: #1d3557;
     }
 
     input[type="text"],
     input[type="tel"],
     input[type="file"] {
       width: 100%;
-      padding: 12px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 16px;
+      padding: 12px 14px;
+      border: 1.5px solid #cfd8e3;
+      border-radius: 8px;
+      font-size: 15px;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    input:focus {
+      border-color: #457b9d;
+      box-shadow: 0 0 0 3px rgba(69, 123, 157, 0.2);
+      outline: none;
     }
 
     .upload-box {
@@ -69,7 +94,14 @@
       background: #f8fafc;
       padding: 30px;
       text-align: center;
-      border-radius: 8px;
+      border-radius: 10px;
+      color: #666;
+      transition: all 0.3s ease;
+    }
+
+    .upload-box:hover {
+      background: #edf2f7;
+      border-color: #457b9d;
     }
 
     button {
@@ -77,14 +109,16 @@
       color: white;
       border: none;
       padding: 14px 0;
-      border-radius: 6px;
-      font-size: 16px;
+      border-radius: 8px;
+      font-size: 17px;
+      font-weight: 600;
       cursor: pointer;
-      transition: background 0.3s;
+      transition: background 0.3s, transform 0.2s;
     }
 
     button:hover {
       background-color: #1d3557;
+      transform: translateY(-2px);
     }
 
     .thank-you {
@@ -95,13 +129,41 @@
 
     .thank-you h2 {
       color: #1d3557;
+      font-size: 28px;
+      margin-bottom: 10px;
     }
 
     .thank-you p {
       color: #555;
+      font-size: 17px;
+    }
+
+    /* Loading Spinner */
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #457b9d;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 0.8s linear infinite;
+      margin: 20px auto;
+      display: none;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 30px 20px;
+      }
+      h2 {
+        font-size: 20px;
+      }
     }
   </style>
-
   <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
 </head>
 <body>
@@ -109,142 +171,112 @@
     <div class="header">
       <img src="https://raw.githubusercontent.com/VbixInnovation/registerlinev45group/main/V45Logo.png" alt="V45 Group Logo">
       <h2>การแก้ไขงานของผู้รับเหมา</h2>
+      <p>กรอกข้อมูลด้านล่างเพื่อติดต่อทีมงาน V45 Group</p>
     </div>
 
     <div id="formSection">
       <form id="contractorForm">
-        <h3>แจ้งรายละเอียดการแก้ไข</h3>
+        <label>บริษัทผู้รับเหมา *</label>
+        <input type="text" id="company" placeholder="เช่น บริษัท วีโฟร์ตี้ไฟว์ จำกัด" required>
 
-        <div>
-          <label>บริษัทผู้รับเหมา *</label>
-          <input type="text" id="company" placeholder="กรอกชื่อบริษัทผู้รับเหมา" required>
+        <label>ชื่อผู้ติดต่อ *</label>
+        <input type="text" id="contactName" placeholder="ชื่อ-นามสกุล ผู้ติดต่อ" required>
+
+        <label>เบอร์ติดต่อ *</label>
+        <input type="tel" id="contactPhone" placeholder="เช่น 099-999-9999" required>
+
+        <label>Line ID</label>
+        <input type="text" id="lineId" placeholder="Line ID (ถ้ามี)">
+
+        <label>แนบเอกสารเพิ่มเติม *</label>
+        <div class="upload-box">
+          <input type="file" id="fileUpload" multiple>
+          <p>ลากไฟล์มาวางที่นี่ หรือคลิกเพื่ออัปโหลด</p>
         </div>
 
-        <div class="form-row">
-          <div>
-            <label>ชื่อผู้ติดต่อ *</label>
-            <input type="text" id="contactName" placeholder="ชื่อผู้ติดต่อ" required>
-          </div>
-          <div>
-            <label>เบอร์ติดต่อ *</label>
-            <input type="tel" id="contactPhone" placeholder="เบอร์ติดต่อ" required>
-          </div>
-        </div>
-
-        <div>
-          <label>Line ID</label>
-          <input type="text" id="lineId" placeholder="Line ID">
-        </div>
-
-        <div>
-          <label>แนบเอกสารเพิ่มเติม *</label>
-          <div class="upload-box">
-            <input type="file" id="fileUpload" multiple>
-            <p>ลากไฟล์มาวางที่นี่ หรือคลิกเพื่ออัปโหลด</p>
-          </div>
-        </div>
-
-        <button type="submit">Submit</button>
+        <div class="spinner" id="spinner"></div>
+        <button type="submit">📤 ส่งข้อมูล</button>
       </form>
     </div>
 
     <div class="thank-you" id="thankYouMessage">
       <h2>✅ ขอบคุณที่กรอกข้อมูล</h2>
-      <p>ระบบได้รับข้อมูลของคุณเรียบร้อยแล้ว</p>
+      <p>ระบบได้รับข้อมูลของคุณเรียบร้อยแล้ว ทีมงานจะติดต่อกลับโดยเร็วที่สุด</p>
     </div>
   </div>
 
-  <script>
-    let userId = "";
+<script>
+  let userId = "";
 
-    // 🔹 เริ่มต้น LIFF
-    async function main() {
-      try {
-        await liff.init({ liffId: "2008283290-7RLYvkdG" });
-        if (!liff.isLoggedIn()) {
-          liff.login();
-          return;
-        }
-        const profile = await liff.getProfile();
-        userId = profile.userId;
-        console.log("LINE User ID:", userId);
-      } catch (err) {
-        console.error("LIFF error:", err);
+  async function main() {
+    try {
+      await liff.init({ liffId: "2008283290-7RLYvkdG" });
+      if (!liff.isLoggedIn()) {
+        liff.login();
+        return;
       }
+      const profile = await liff.getProfile();
+      userId = profile.userId;
+      console.log("LINE User ID:", userId);
+    } catch (err) {
+      console.error("LIFF error:", err);
     }
-    main();
+  }
+  main();
 
-    // 🔹 ฟังก์ชันอ่านไฟล์เป็น Base64
-    function readFileAsBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(",")[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
+  const form = document.getElementById("contractorForm");
+  const spinner = document.getElementById("spinner");
+  const thankYou = document.getElementById("thankYouMessage");
+  const formSection = document.getElementById("formSection");
 
-    const form = document.getElementById("contractorForm");
-    const thankYou = document.getElementById("thankYouMessage");
-    const formSection = document.getElementById("formSection");
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    spinner.style.display = "block";
 
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
+    // ✅ เก็บค่าจากฟอร์ม
+    const contractorName = document.getElementById("company").value;
+    const contactName = document.getElementById("contactName").value;
+    const contractNo = document.getElementById("contactPhone").value;
+    const lineId = document.getElementById("lineId").value;
 
-      // แปลงไฟล์ทั้งหมดเป็น Base64
-      const files = document.getElementById("fileUpload").files;
-      const attachments = [];
-      for (let file of files) {
-        const base64 = await readFileAsBase64(file);
-        attachments.push({
-          name: file.name,
-          content: base64,
-          content_type: file.type
-        });  
-      }
+    // ✅ headers จากตัวอย่างของคุณ
+    const myHeaders = new Headers();
+    myHeaders.append("X-Access-Key-Id", "Ak398fdc64-143d-48b5-8237-0f6403b4f6a6");
+    myHeaders.append("X-Access-Key-Secret", "rRGLEzJ0SFbbYC7jsSLsA84H1xCFZvTYS8PDUD2x1OcsTP4LEgP9-9ZHaiVdloVVmSvlM69nMdTVAY3eVPauPQ");
+    myHeaders.append("Content-Type", "application/json");
 
-      const data = {
-        company: document.getElementById("company").value,
-        contactName: document.getElementById("contactName").value,
-        contactPhone: document.getElementById("contactPhone").value,
-        lineId: document.getElementById("lineId").value,
-        userId: userId
-      };
+    // ✅ body แบบ JSON (ใช้ค่าจากผู้ใช้)
+    const raw = JSON.stringify({
+      "Contract_No": contractNo,
+      "Contractor_Name": contractorName,
+      "Technician_Name": contactName,
+      "Line_ID": lineId,
+      "UserID": userId
+    });
 
-      console.log("📤 Sending to Kissflow:", data);
+    const requestOptions = {
+      method: "POST",
+      headers: myHeaders,
+      body: raw,
+      redirect: "follow"
+    };
 
-      try {
-        const response = await fetch("https://development-v45group.kissflow.com/process/2/AcBm1i3UZPmE/Contractor_Task_Revision_A00/create/submit", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Access-Key-Id": "Ak398fdc64-143d-48b5-8237-0f6403b4f6a6",
-            "X-Access-Key-Secret": "rRGLEzJ0SFbbYC7jsSLsA84H1xCFZvTYS8PDUD2x1OcsTP4LEgP9-9ZHaiVdloVVmSvlM69nMdTVAY3eVPauPQ",
-            "account_id": "AcBm1i3UZPmE"
-          },
-          body: JSON.stringify({
-            data: {
-              Contractor_Name: data.company,
-              Technician_Name: data.contactName,
-              Contract_No: data.contactPhone,
-              Line_ID: data.lineId,
-              UserID: data.userId,
-              Additional_Attachment: attachments
-            }
-          })
-        });
-
-        const result = await response.json();
-        console.log("✅ Kissflow response:", result);
-
-        // ✅ แสดง Thank You หลังส่งสำเร็จ
+    // ✅ fetch API
+    fetch("https://development-v45group.kissflow.com/process/2/AcBm1i3UZPmE/Contractor_Task_Revision_A00/create/submit", requestOptions)
+      .then((response) => response.text())
+      .then((result) => {
+        console.log("✅ Kissflow Response:", result);
+        spinner.style.display = "none";
         formSection.style.display = "none";
         thankYou.style.display = "block";
+      })
+      .catch((error) => {
+        spinner.style.display = "none";
+        console.error("❌ Error:", error);
+        alert("เกิดข้อผิดพลาดในการส่งข้อมูล");
+      });
+  });
+</script>
 
-      } catch (error) {
-        console.error("❌ Error sending to Kissflow:", error);
-      }
-    });
-  </script>
 </body>
 </html>
