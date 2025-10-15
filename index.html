@@ -231,22 +231,21 @@
 
   const fileInput = document.getElementById("fileUpload");
 
-  async function fileToBase64(file) {
-    const arrayBuffer = await file.arrayBuffer();
-    let binary = "";
-    const bytes = new Uint8Array(arrayBuffer);
-    const chunkSize = 0x8000;
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-      const chunk = bytes.subarray(i, i + chunkSize);
-      binary += String.fromCharCode(...chunk);
+  function createAttachmentId() {
+    if (typeof crypto !== "undefined" && crypto.randomUUID) {
+      return `Attach-${crypto.randomUUID().replace(/-/g, "")}`;
     }
-    return btoa(binary);
+    const randomSegment = Math.random().toString(36).slice(2, 10);
+    return `Attach-${Date.now()}-${randomSegment}`;
   }
 
-  async function buildAttachmentPayload(files) {
-    if (!files || files.length === 0) {
-      return [];
+  function getFileExtension(name) {
+    const lastDotIndex = name.lastIndexOf(".");
+    if (lastDotIndex === -1 || lastDotIndex === name.length - 1) {
+      return "";
     }
+    return name.slice(lastDotIndex + 1).toLowerCase();
+  }
 
     const attachments = [];
 
@@ -258,9 +257,16 @@
         Size: file.size,
         Data: base64Data
       });
+  function buildAttachmentPayload(files) {
+    if (!files || files.length === 0) {
+      return [];
     }
 
-    return attachments;
+    return Array.from(files).map((file) => ({
+      name: file.name,
+      size: file.size,
+      fileExtension: getFileExtension(file.name)
+    }));
   }
 
   form.addEventListener("submit", async (event) => {
@@ -271,7 +277,7 @@
     const contactName = document.getElementById("contactName").value;
     const contractNo = document.getElementById("contactPhone").value;
     const lineId = document.getElementById("lineId").value;
-    const attachments = await buildAttachmentPayload(fileInput.files);
+    const attachments = buildAttachmentPayload(fileInput.files);
 
     const payload = JSON.stringify({
       Contractor_Name: contractorName,
