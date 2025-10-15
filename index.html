@@ -62,21 +62,6 @@
       border: 1px solid #ccc;
       border-radius: 6px;
       font-size: 16px;
-      transition: border-color 0.3s;
-    }
-
-    input:focus {
-      border-color: #457b9d;
-      outline: none;
-    }
-
-    .form-row {
-      display: flex;
-      gap: 20px;
-    }
-
-    .form-row > div {
-      flex: 1;
     }
 
     .upload-box {
@@ -85,13 +70,6 @@
       padding: 30px;
       text-align: center;
       border-radius: 8px;
-      color: #666;
-      font-size: 14px;
-    }
-
-    .upload-box:hover {
-      background: #eef2f7;
-      border-color: #457b9d;
     }
 
     button {
@@ -117,13 +95,10 @@
 
     .thank-you h2 {
       color: #1d3557;
-      font-size: 28px;
-      margin-bottom: 10px;
     }
 
     .thank-you p {
       color: #555;
-      font-size: 18px;
     }
   </style>
 
@@ -182,6 +157,7 @@
   <script>
     let userId = "";
 
+    // 🔹 เริ่มต้น LIFF
     async function main() {
       try {
         await liff.init({ liffId: "2008283290-7RLYvkdG" });
@@ -196,17 +172,26 @@
         console.error("LIFF error:", err);
       }
     }
-
     main();
+
+    // 🔹 ฟังก์ชันอ่านไฟล์เป็น Base64
+    function readFileAsBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
 
     const form = document.getElementById("contractorForm");
     const thankYou = document.getElementById("thankYouMessage");
     const formSection = document.getElementById("formSection");
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
 
-      // อ่านไฟล์ทั้งหมดและแปลงเป็น Base64
+      // แปลงไฟล์ทั้งหมดเป็น Base64
       const files = document.getElementById("fileUpload").files;
       const attachments = [];
       for (let file of files) {
@@ -218,9 +203,6 @@
         });
       }
 
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-
       const data = {
         company: document.getElementById("company").value,
         contactName: document.getElementById("contactName").value,
@@ -228,7 +210,6 @@
         lineId: document.getElementById("lineId").value,
         userId: userId
       };
-      
 
       console.log("📤 Sending to Kissflow:", data);
 
@@ -248,19 +229,21 @@
               Contract_No: data.contactPhone,
               Line_ID: data.lineId,
               UserID: data.userId,
-               Additional_Attachment: attachments
+              Additional_Attachment: attachments
             }
           })
         });
 
         const result = await response.json();
         console.log("✅ Kissflow response:", result);
+
+        // ✅ แสดง Thank You หลังส่งสำเร็จ
+        formSection.style.display = "none";
+        thankYou.style.display = "block";
+
       } catch (error) {
         console.error("❌ Error sending to Kissflow:", error);
       }
-
-      formSection.style.display = "none";
-      thankYou.style.display = "block";
     });
   </script>
 </body>
