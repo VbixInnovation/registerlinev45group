@@ -253,7 +253,6 @@
     }
 
     return Array.from(files).map((file) => ({
-      id: createAttachmentId(),
       name: file.name,
       size: file.size,
       fileExtension: getFileExtension(file.name)
@@ -276,7 +275,7 @@
       Contract_No: contractNo,
       Line_ID: lineId,
       UserID: userId,
-      GR_Form: attachments
+      Additional_Attachment: attachments
     });
 
     try {
