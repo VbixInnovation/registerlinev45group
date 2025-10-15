@@ -229,6 +229,38 @@
   const thankYou = document.getElementById("thankYouMessage");
   const formSection = document.getElementById("formSection");
 
+  const fileInput = document.getElementById("fileUpload");
+
+  async function fileToBlobDescriptor(file) {
+    const arrayBuffer = await file.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+
+    return {
+      FileName: file.name,
+      ContentType: file.type || "application/octet-stream",
+      Size: file.size,
+      // BlobData is sent as a plain array of bytes so server-side code can
+      // recreate a Blob (e.g., with Utilities.newBlob in Apps Script) and then
+      // call getBlob() or copyBlob() as needed.
+      BlobData: Array.from(uint8Array)
+    };
+  }
+
+  async function buildAttachmentPayload(files) {
+    if (!files || files.length === 0) {
+      return [];
+    }
+
+    const attachments = [];
+
+    for (const file of files) {
+      const descriptor = await fileToBlobDescriptor(file);
+      attachments.push(descriptor);
+    }
+
+    return attachments;
+  }
+
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     spinner.style.display = "block";
@@ -237,16 +269,16 @@
     const contactName = document.getElementById("contactName").value;
     const contractNo = document.getElementById("contactPhone").value;
     const lineId = document.getElementById("lineId").value;
+    const attachments = await buildAttachmentPayload(fileInput.files);
 
-    const payload = JSON.stringify(
-      {
-        Contractor_Name: contractorName,
-        Technician_Name: contactName,
-        Contract_No: contractNo,
-        Line_ID: lineId,
-        UserID: userId
-      }
-    );
+    const payload = JSON.stringify({
+      Contractor_Name: contractorName,
+      Technician_Name: contactName,
+      Contract_No: contractNo,
+      Line_ID: lineId,
+      UserID: userId,
+      Attachments: attachments
+    });
 
     try {
       const endpoint = "https://development-v45group.kissflow.com/process/2/AcBm1i3UZPmE/Contractor_Task_Revision_A00/create/submit";
