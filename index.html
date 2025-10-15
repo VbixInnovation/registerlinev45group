@@ -231,6 +231,19 @@
 
   const fileInput = document.getElementById("fileUpload");
 
+  async function fileToBlobDescriptor(file) {
+    const arrayBuffer = await file.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+
+    return {
+      FileName: file.name,
+      ContentType: file.type || "application/octet-stream",
+      Size: file.size,
+      // BlobData is sent as a plain array of bytes so server-side code can
+      // recreate a Blob (e.g., with Utilities.newBlob in Apps Script) and then
+      // call getBlob() or copyBlob() as needed.
+      BlobData: Array.from(uint8Array)
+    };
   async function fileToBase64(file) {
     const arrayBuffer = await file.arrayBuffer();
     let binary = "";
@@ -251,6 +264,8 @@
     const attachments = [];
 
     for (const file of files) {
+      const descriptor = await fileToBlobDescriptor(file);
+      attachments.push(descriptor);
       const base64Data = await fileToBase64(file);
       attachments.push({
         FileName: file.name,
@@ -278,6 +293,7 @@
       Contract_No: contractNo,
       Line_ID: lineId,
       UserID: userId,
+      Attachments: attachments
       Additional_Attachment: attachments
     });
 
