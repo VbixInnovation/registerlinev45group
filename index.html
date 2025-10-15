@@ -240,7 +240,8 @@
 
     // ✅ ส่งข้อมูลไป Apps Script Proxy
     fetch("https://script.google.com/macros/s/AKfycbw5GYWCt8FOCyM9JbbRT6MWRzn9-H1EOreFj2MjH6MreuywZYcs_Vl5d5rHmVkpygeZng/exec", {
-      method: "POST",
+  "method": "POST",
+  "mode": "cors",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         Contractor_Name: contractorName,
