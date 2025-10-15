@@ -132,7 +132,7 @@
 <body>
   <div class="container">
     <div class="header">
-      <img src="V45Logo.png" alt="V45 Group Logo">
+      <img src="https://raw.githubusercontent.com/VbixInnovation/registerlinev45group/main/V45Logo.png" alt="V45 Group Logo">
       <h2>การแก้ไขงานของผู้รับเหมา</h2>
     </div>
 
@@ -203,6 +203,21 @@
     const thankYou = document.getElementById("thankYouMessage");
     const formSection = document.getElementById("formSection");
 
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      // อ่านไฟล์ทั้งหมดและแปลงเป็น Base64
+      const files = document.getElementById("fileUpload").files;
+      const attachments = [];
+      for (let file of files) {
+        const base64 = await readFileAsBase64(file);
+        attachments.push({
+          name: file.name,
+          content: base64,
+          content_type: file.type
+        });
+      }
+
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
 
@@ -213,6 +228,7 @@
         lineId: document.getElementById("lineId").value,
         userId: userId
       };
+      
 
       console.log("📤 Sending to Kissflow:", data);
 
@@ -227,11 +243,12 @@
           },
           body: JSON.stringify({
             data: {
-              Company_Name: data.company,
-              Contact_Name: data.contactName,
-              Phone: data.contactPhone,
+              Contractor_Name: data.company,
+              Technician_Name: data.contactName,
+              Contract_No: data.contactPhone,
               Line_ID: data.lineId,
-              Line_UserID: data.userId
+              UserID: data.userId,
+               Additional_Attachment: attachments
             }
           })
         });
