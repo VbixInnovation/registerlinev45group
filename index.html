@@ -249,18 +249,19 @@
     ]);
 
     try {
-      const response = await fetch(
-        "https://development-v45group.kissflow.com/process/2/AcBm1i3UZPmE/Contractor_Task_Revision_A00/create/submit",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Access-Key-Id": "Ak398fdc64-143d-48b5-8237-0f6403b4f6a6",
-            "X-Access-Key-Secret": "rRGLEzJ0SFbbYC7jsSLsA84H1xCFZvTYS8PDUD2x1OcsTP4LEgP9-9ZHaiVdloVVmSvlM69nMdTVAY3eVPauPQ",
-          },
-          body: payload
-        }
-      );
+      const endpoint = "https://development-v45group.kissflow.com/process/2/AcBm1i3UZPmE/Contractor_Task_Revision_A00/create/submit";
+      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(endpoint)}`;
+
+      const response = await fetch(proxyUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Access-Key-Id": "Ak398fdc64-143d-48b5-8237-0f6403b4f6a6",
+          "X-Access-Key-Secret": "rRGLEzJ0SFbbYC7jsSLsA84H1xCFZvTYS8PDUD2x1OcsTP4LEgP9-9ZHaiVdloVVmSvlM69nMdTVAY3eVPauPQ",
+          "X-Requested-With": "XMLHttpRequest"
+        },
+        body: payload
+      });
 
       if (!response.ok) {
         throw new Error(`Request failed: ${response.status} ${response.statusText}`);
