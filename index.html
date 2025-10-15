@@ -246,13 +246,13 @@
     myHeaders.append("Content-Type", "application/json");
 
     // ✅ body แบบ JSON (ใช้ค่าจากผู้ใช้)
-    const raw = JSON.stringify({
+    const raw = JSON.stringify([{
       "Contract_No": contractNo,
       "Contractor_Name": contractorName,
       "Technician_Name": contactName,
       "Line_ID": lineId,
       "UserID": userId
-    });
+    }]);
 
     const requestOptions = {
       method: "POST",
