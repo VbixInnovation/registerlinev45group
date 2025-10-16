@@ -239,8 +239,6 @@
     const contactName = document.getElementById("contactName").value;
     const contractNo = document.getElementById("contactPhone").value;
     const lineId = document.getElementById("lineId").value;
-    const attachments = buildAttachmentPayload(fileInput.files);
-
     const payload = JSON.stringify({
       Contractor_Name: contractorName,
       Technician_Name: contactName,
@@ -269,7 +267,28 @@
         throw new Error(`Request failed: ${response.status} ${response.statusText}`);
       }
 
-      console.log("✅ Sent via Proxy:", await response.text());
+      const responseText = await response.text();
+      let submissionResult;
+
+      try {
+        submissionResult = JSON.parse(responseText);
+      } catch (parseError) {
+        throw new Error(`Unable to parse submission response: ${responseText}`);
+      }
+
+      console.log("✅ Sent via Proxy:", submissionResult);
+
+      const recordId = submissionResult?._id;
+      const activityInstanceId = submissionResult?._activity_instance_id;
+
+      if (!recordId || !activityInstanceId) {
+        throw new Error("Missing record identifiers from submission response");
+      }
+
+      if (fileInput.files.length > 0) {
+        await uploadAttachments(recordId, activityInstanceId, fileInput.files);
+      }
+
       formSection.style.display = "none";
       thankYou.style.display = "block";
     } catch (error) {
@@ -279,6 +298,35 @@
       spinner.style.display = "none";
     }
   });
+
+  async function uploadAttachments(recordId, activityInstanceId, files) {
+    const attachmentEndpoint = `https://development-v45group.kissflow.com/process/2/AcBm1i3UZPmE/Contractor_Task_Revision_A00/${recordId}/${activityInstanceId}/Additional_Attachment/attachment`;
+    const proxyAttachmentUrl = `https://corsproxy.io/?${encodeURIComponent(attachmentEndpoint)}`;
+
+    for (const file of files) {
+      const headers = new Headers();
+      headers.append("X-Access-Key-Id", "Ak398fdc64-143d-48b5-8237-0f6403b4f6a6");
+      headers.append("X-Access-Key-Secret", "rRGLEzJ0SFbbYC7jsSLsA84H1xCFZvTYS8PDUD2x1OcsTP4LEgP9-9ZHaiVdloVVmSvlM69nMdTVAY3eVPauPQ");
+      headers.append("X-Requested-With", "XMLHttpRequest");
+      headers.append("Cookie", "__cfruid=87bdc913a4345fdb11a9d759f0cf8c3b1692fd0e-1760586171");
+
+      const formData = new FormData();
+      formData.append("file", file, file.name);
+
+      const uploadResponse = await fetch(proxyAttachmentUrl, {
+        method: "POST",
+        headers,
+        body: formData,
+        redirect: "follow"
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error(`Attachment upload failed: ${uploadResponse.status} ${uploadResponse.statusText}`);
+      }
+
+      console.log(`📎 Uploaded attachment: ${file.name}`);
+    }
+  }
 </script>
 
 
