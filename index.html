@@ -315,8 +315,11 @@
   async function initializeLiff() {
     try {
       await liff.init({ liffId: "2008283290-7RLYvkdG" });
-      if (!liff.isLoggedIn()) {
-        liff.login();
+      await liff.ready;
+
+      if (!liff.isInClient() && !liff.isLoggedIn()) {
+        loadingText.textContent = "กำลังนำคุณไปยังหน้าเข้าสู่ระบบ LINE ...";
+        liff.login({ redirectUri: window.location.href });
         return "login";
       }
       return "ready";
