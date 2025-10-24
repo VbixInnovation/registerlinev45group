@@ -214,6 +214,7 @@
   <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
 </head>
 <body>
+  <div class="loading-overlay hidden" id="loadingOverlay">
   <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-spinner"></div>
     <div id="loadingText">กำลังโหลดข้อมูลจาก LINE ...</div>
@@ -262,7 +263,62 @@
 
 <script>
   let userId = "";
+  let pollingTimeoutId = null;
 
+  const USER_ID_STORAGE_KEY = "v45-liff-user-id";
+
+  const form = document.getElementById("contractorForm");
+  const spinner = document.getElementById("spinner");
+  const thankYou = document.getElementById("thankYouMessage");
+  const formSection = document.getElementById("formSection");
+  const loadingOverlay = document.getElementById("loadingOverlay");
+  const loadingText = document.getElementById("loadingText");
+  const retryButton = document.getElementById("retryButton");
+
+  const fileInput = document.getElementById("fileUpload");
+  const formElements = form.querySelectorAll("input, button");
+
+  function setFormEnabled(isEnabled) {
+    formElements.forEach((element) => {
+      if (isEnabled) {
+        element.removeAttribute("disabled");
+      } else {
+        element.setAttribute("disabled", "disabled");
+      }
+    });
+  }
+
+  function stopUserIdPolling() {
+    if (pollingTimeoutId) {
+      clearTimeout(pollingTimeoutId);
+      pollingTimeoutId = null;
+    }
+  }
+
+  function handleUserIdResolved(resolvedUserId) {
+    if (!resolvedUserId) {
+      return;
+    }
+
+    stopUserIdPolling();
+    userId = resolvedUserId;
+    sessionStorage.setItem(USER_ID_STORAGE_KEY, resolvedUserId);
+    console.log("LINE User ID:", resolvedUserId);
+    retryButton.style.display = "none";
+    loadingOverlay.classList.add("hidden");
+    setFormEnabled(true);
+  }
+
+  function showLoading(message) {
+    if (message) {
+      loadingText.textContent = message;
+    }
+    retryButton.style.display = "none";
+    loadingOverlay.classList.remove("hidden");
+    setFormEnabled(false);
+  }
+
+  async function initializeLiff() {
   const form = document.getElementById("contractorForm");
   const spinner = document.getElementById("spinner");
   const thankYou = document.getElementById("thankYouMessage");
@@ -294,8 +350,55 @@
       await liff.init({ liffId: "2008283290-7RLYvkdG" });
       if (!liff.isLoggedIn()) {
         liff.login();
+        return "login";
+      }
+      return "ready";
+    } catch (err) {
+      console.error("LIFF error:", err);
+      loadingText.textContent = "ไม่สามารถเชื่อมต่อ LINE ได้ กรุณาลองอีกครั้ง";
+      retryButton.style.display = "inline-flex";
+      return "error";
+    }
+  }
+
+  async function pollForUserId(attempt = 1) {
+    try {
+      const profile = await liff.getProfile();
+      if (profile?.userId) {
+        handleUserIdResolved(profile.userId);
         return;
       }
+      throw new Error("Profile did not include a userId");
+    } catch (error) {
+      console.warn("Unable to fetch LINE User ID:", error);
+      loadingText.textContent = `กำลังโหลดข้อมูลจาก LINE ... (พยายามครั้งที่ ${attempt})`;
+      retryButton.style.display = "inline-flex";
+      pollingTimeoutId = setTimeout(() => pollForUserId(attempt + 1), 2000);
+    }
+  }
+
+  async function startUserIdFlow() {
+    stopUserIdPolling();
+
+    const storedUserId = sessionStorage.getItem(USER_ID_STORAGE_KEY);
+    if (storedUserId) {
+      handleUserIdResolved(storedUserId);
+      return;
+    }
+
+    showLoading("กำลังโหลดข้อมูลจาก LINE ...");
+
+    const liffStatus = await initializeLiff();
+    if (liffStatus === "ready") {
+      pollForUserId();
+    } else if (liffStatus === "error") {
+      pollingTimeoutId = setTimeout(() => startUserIdFlow(), 3000);
+    }
+  }
+
+  retryButton.addEventListener("click", startUserIdFlow);
+
+  startUserIdFlow();
       const profile = await liff.getProfile();
       userId = profile.userId;
       console.log("LINE User ID:", userId);
