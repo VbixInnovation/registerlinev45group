@@ -10,12 +10,13 @@
       font-family: "Prompt", sans-serif;
       background: linear-gradient(135deg, #e8f0fe 0%, #ffffff 100%);
       margin: 0;
-      padding: 0;
+      padding: 24px 12px;
       color: #333;
       min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
+      box-sizing: border-box;
     }
 
     .container {
@@ -138,6 +139,30 @@
       font-size: 17px;
     }
 
+    .status-message {
+      background: rgba(69, 123, 157, 0.08);
+      border: 1px solid rgba(69, 123, 157, 0.2);
+      color: #1d3557;
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin-bottom: 24px;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .status-message.error {
+      background: rgba(231, 76, 60, 0.1);
+      border-color: rgba(231, 76, 60, 0.4);
+      color: #c0392b;
+    }
+
+    .status-message .hint {
+      margin-top: 4px;
+      font-size: 14px;
+      color: inherit;
+      opacity: 0.85;
+    }
+
     /* Loading Spinner */
     .spinner {
       border: 4px solid #f3f3f3;
@@ -156,11 +181,24 @@
     }
 
     @media (max-width: 600px) {
+      body {
+        padding: 18px 12px 32px;
+        align-items: flex-start;
+      }
       .container {
-        padding: 30px 20px;
+        padding: 28px 18px 36px;
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
       }
       h2 {
         font-size: 20px;
+      }
+      label {
+        font-size: 14px;
+      }
+      input[type="text"],
+      input[type="tel"],
+      input[type="file"] {
+        font-size: 14px;
       }
     }
   </style>
@@ -174,7 +212,12 @@
       <p>กรอกข้อมูลด้านล่างเพื่อติดต่อทีมงาน V45 Group</p>
     </div>
 
-    <div id="formSection">
+    <div id="authState" class="status-message">
+      กำลังตรวจสอบสิทธิ์การใช้งาน LINE ของคุณ...
+      <div class="hint">หากหน้านี้ไม่เปลี่ยนแปลง โปรดเปิดแบบฟอร์มผ่านแอป LINE บนอุปกรณ์มือถือของคุณ</div>
+    </div>
+
+    <div id="formSection" style="display: none;">
       <form id="contractorForm">
         <label>บริษัท/ ชื่อ-นามสกุล (ที่ต้องการระบุในเอกสาร) *</label>
         <input type="text" id="company" placeholder="เช่น บริษัท วีโฟร์ตี้ไฟว์ จำกัด" required>
@@ -211,32 +254,52 @@
 <script>
   let userId = "";
 
+  const formSection = document.getElementById("formSection");
+  const form = document.getElementById("contractorForm");
+  const spinner = document.getElementById("spinner");
+  const thankYou = document.getElementById("thankYouMessage");
+  const fileInput = document.getElementById("fileUpload");
+  const authState = document.getElementById("authState");
+
   async function main() {
     try {
       await liff.init({ liffId: "2008283290-7RLYvkdG" });
       if (!liff.isLoggedIn()) {
+        authState.textContent = "กำลังนำคุณไปเข้าสู่ระบบ LINE...";
         liff.login();
         return;
       }
+
       const profile = await liff.getProfile();
       userId = profile.userId;
       console.log("LINE User ID:", userId);
+
+      if (!userId) {
+        authState.classList.add("error");
+        authState.innerHTML = "ไม่พบรหัสผู้ใช้ LINE ของคุณ <div class=\"hint\">โปรดลองเปิดลิงก์นี้จากแอป LINE อีกครั้ง</div>";
+        return;
+      }
+
+      authState.style.display = "none";
+      formSection.style.display = "block";
     } catch (err) {
       console.error("LIFF error:", err);
+      authState.classList.add("error");
+      authState.innerHTML = "ไม่สามารถตรวจสอบสิทธิ์ LINE ได้ <div class=\"hint\">โปรดลองรีเฟรชหน้าหรือเปิดผ่านเบราว์เซอร์ในแอป LINE</div>";
+      formSection.style.display = "none";
     }
   }
   main();
 
-  const form = document.getElementById("contractorForm");
-  const spinner = document.getElementById("spinner");
-  const thankYou = document.getElementById("thankYouMessage");
-  const formSection = document.getElementById("formSection");
-
-  const fileInput = document.getElementById("fileUpload");
-
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     spinner.style.display = "block";
+
+    if (!userId) {
+      spinner.style.display = "none";
+      alert("ไม่พบรหัสผู้ใช้ LINE กรุณาเปิดแบบฟอร์มจากแอป LINE อีกครั้ง");
+      return;
+    }
 
     const contractorName = document.getElementById("company").value;
     const contactName = document.getElementById("contactName").value;
