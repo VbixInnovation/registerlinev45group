@@ -155,6 +155,53 @@
       100% { transform: rotate(360deg); }
     }
 
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      z-index: 999;
+      text-align: center;
+      color: #1d3557;
+      font-weight: 600;
+    }
+
+    .loading-overlay.hidden {
+      display: none;
+    }
+
+    .loading-overlay .loading-spinner {
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #457b9d;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+    }
+
+    .loading-overlay button {
+      background: #457b9d;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .loading-overlay button:hover {
+      background: #1d3557;
+    }
+
     @media (max-width: 600px) {
       .container {
         padding: 30px 20px;
@@ -167,6 +214,11 @@
   <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
 </head>
 <body>
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div id="loadingText">กำลังโหลดข้อมูลจาก LINE ...</div>
+    <button id="retryButton" type="button" style="display: none;">ลองอีกครั้ง</button>
+  </div>
   <div class="container">
     <div class="header">
       <img src="https://raw.githubusercontent.com/VbixInnovation/registerlinev45group/main/V45Logo.png" alt="V45 Group Logo">
@@ -179,6 +231,9 @@
         <label>บริษัท/ ชื่อ-นามสกุล (ที่ต้องการระบุในเอกสาร) *</label>
         <input type="text" id="company" placeholder="เช่น บริษัท วีโฟร์ตี้ไฟว์ จำกัด" required>
 
+        <label>ชื่อโครงการ *</label>
+        <input type="text" id="projectName" placeholder="เช่น โครงการปรับปรุงระบบไฟฟ้า" required>
+
         <label>ชื่อผู้ติดต่อ *</label>
         <input type="text" id="contactName" placeholder="ชื่อ-นามสกุล ผู้ติดต่อ" required>
 
@@ -190,7 +245,7 @@
 
         <label>แนบเอกสารเพิ่มเติม *</label>
         <div class="upload-box">
-          <input type="file" id="fileUpload" multiple>
+          <input type="file" id="fileUpload" multiple required>
           <p>ลากไฟล์มาวางที่นี่ หรือคลิกเพื่ออัปโหลด</p>
         </div>
 
@@ -208,7 +263,33 @@
 <script>
   let userId = "";
 
+  const form = document.getElementById("contractorForm");
+  const spinner = document.getElementById("spinner");
+  const thankYou = document.getElementById("thankYouMessage");
+  const formSection = document.getElementById("formSection");
+  const loadingOverlay = document.getElementById("loadingOverlay");
+  const loadingText = document.getElementById("loadingText");
+  const retryButton = document.getElementById("retryButton");
+
+  const fileInput = document.getElementById("fileUpload");
+  const formElements = form.querySelectorAll("input, button");
+
+  function setFormEnabled(isEnabled) {
+    formElements.forEach((element) => {
+      if (isEnabled) {
+        element.removeAttribute("disabled");
+      } else {
+        element.setAttribute("disabled", "disabled");
+      }
+    });
+  }
+
   async function main() {
+    setFormEnabled(false);
+    loadingOverlay.classList.remove("hidden");
+    loadingText.textContent = "กำลังโหลดข้อมูลจาก LINE ...";
+    retryButton.style.display = "none";
+
     try {
       await liff.init({ liffId: "2008283290-7RLYvkdG" });
       if (!liff.isLoggedIn()) {
@@ -218,18 +299,18 @@
       const profile = await liff.getProfile();
       userId = profile.userId;
       console.log("LINE User ID:", userId);
+      loadingOverlay.classList.add("hidden");
+      setFormEnabled(true);
     } catch (err) {
       console.error("LIFF error:", err);
+      loadingText.textContent = "ไม่สามารถดึงข้อมูลจาก LINE ได้ กรุณาลองอีกครั้ง";
+      retryButton.style.display = "inline-flex";
     }
   }
+
+  retryButton.addEventListener("click", main);
+
   main();
-
-  const form = document.getElementById("contractorForm");
-  const spinner = document.getElementById("spinner");
-  const thankYou = document.getElementById("thankYouMessage");
-  const formSection = document.getElementById("formSection");
-
-  const fileInput = document.getElementById("fileUpload");
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -237,6 +318,7 @@
 
     const contractorName = document.getElementById("company").value;
     const contactName = document.getElementById("contactName").value;
+    const projectName = document.getElementById("projectName").value;
     const contractNo = document.getElementById("contactPhone").value;
     const lineId = document.getElementById("lineId").value;
     const payload = JSON.stringify({
@@ -245,6 +327,7 @@
       Contract_No: contractNo,
       Line_ID: lineId,
       UserID: userId,
+      Project_Name: projectName,
       // Additional_Attachment: attachments
     });
 
