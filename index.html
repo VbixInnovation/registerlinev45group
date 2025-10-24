@@ -284,45 +284,20 @@
     });
   }
 
-  function handleUserIdResolved(resolvedUserId) {
-    if (!resolvedUserId) {
-      return;
-    }
-
-    userId = resolvedUserId;
-    sessionStorage.setItem(USER_ID_STORAGE_KEY, resolvedUserId);
-    console.log("LINE User ID:", resolvedUserId);
-    loadingOverlay.classList.add("hidden");
-    setFormEnabled(true);
-  }
-
-  function showLoading(message) {
-    if (message) {
-      loadingText.textContent = message;
-    }
-    overlaySpinner.style.display = "block";
-    loadingOverlay.classList.remove("hidden");
-    setFormEnabled(false);
-  }
-
-  function showUserIdFailure(message) {
-    overlaySpinner.style.display = "none";
-    loadingOverlay.classList.remove("hidden");
-    loadingText.textContent = message || "ไม่สามารถดึงข้อมูลจาก LINE ได้ กรุณาปิดและเปิดหน้านี้ใหม่อีกครั้ง";
-    setFormEnabled(false);
-  }
-
-  async function initializeLiff() {
+async function main() {
     try {
       await liff.init({ liffId: "2008283290-7RLYvkdG" });
       await liff.ready;
-
+      
       if (!liff.isInClient() && !liff.isLoggedIn()) {
         loadingText.textContent = "กำลังนำคุณไปยังหน้าเข้าสู่ระบบ LINE ...";
         liff.login({ redirectUri: window.location.href });
         return "login";
       }
-      return "ready";
+      const profile = await liff.getProfile();
+      userId = profile.userId;
+      console.log("LINE User ID:", userId);
+      setFormEnabled(true);
     } catch (err) {
       console.error("LIFF error:", err);
       showUserIdFailure("ไม่สามารถเชื่อมต่อ LINE ได้ กรุณาปิดและเปิดหน้านี้ใน LINE ใหม่อีกครั้ง");
@@ -330,36 +305,7 @@
     }
   }
 
-  async function requestUserId() {
-    try {
-      const profile = await liff.getProfile();
-      if (profile?.userId) {
-        handleUserIdResolved(profile.userId);
-        return;
-      }
-      throw new Error("Profile did not include a userId");
-    } catch (error) {
-      console.warn("Unable to fetch LINE User ID:", error);
-      showUserIdFailure("ไม่สามารถดึงข้อมูลจาก LINE ได้ กรุณาปิดและเปิดหน้านี้ใน LINE ใหม่อีกครั้ง");
-    }
-  }
-
-  async function startUserIdFlow() {
-    const storedUserId = sessionStorage.getItem(USER_ID_STORAGE_KEY);
-    if (storedUserId) {
-      handleUserIdResolved(storedUserId);
-      return;
-    }
-
-    showLoading("กำลังโหลดข้อมูลจาก LINE ...");
-
-    const liffStatus = await initializeLiff();
-    if (liffStatus === "ready") {
-      await requestUserId();
-    }
-  }
-
-  startUserIdFlow();
+  main();
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
