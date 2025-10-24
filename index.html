@@ -179,6 +179,9 @@
         <label>บริษัท/ ชื่อ-นามสกุล (ที่ต้องการระบุในเอกสาร) *</label>
         <input type="text" id="company" placeholder="เช่น บริษัท วีโฟร์ตี้ไฟว์ จำกัด" required>
 
+        <label>ชื่อโครงการ *</label>
+        <input type="text" id="projectName" placeholder="เช่น โครงการปรับปรุงระบบไฟฟ้า" required>
+
         <label>ชื่อผู้ติดต่อ *</label>
         <input type="text" id="contactName" placeholder="ชื่อ-นามสกุล ผู้ติดต่อ" required>
 
@@ -190,7 +193,7 @@
 
         <label>แนบเอกสารเพิ่มเติม *</label>
         <div class="upload-box">
-          <input type="file" id="fileUpload" multiple>
+          <input type="file" id="fileUpload" multiple required>
           <p>ลากไฟล์มาวางที่นี่ หรือคลิกเพื่ออัปโหลด</p>
         </div>
 
@@ -237,6 +240,7 @@
 
     const contractorName = document.getElementById("company").value;
     const contactName = document.getElementById("contactName").value;
+    const projectName = document.getElementById("projectName").value;
     const contractNo = document.getElementById("contactPhone").value;
     const lineId = document.getElementById("lineId").value;
     const payload = JSON.stringify({
@@ -245,6 +249,7 @@
       Contract_No: contractNo,
       Line_ID: lineId,
       UserID: userId,
+      Project_Name: projectName,
       // Additional_Attachment: attachments
     });
 
