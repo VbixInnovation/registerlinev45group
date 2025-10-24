@@ -215,9 +215,8 @@
 </head>
 <body>
   <div class="loading-overlay hidden" id="loadingOverlay">
-    <div class="loading-spinner"></div>
+    <div class="loading-spinner" id="overlaySpinner"></div>
     <div id="loadingText">กำลังโหลดข้อมูลจาก LINE ...</div>
-    <button id="retryButton" type="button" style="display: none;">ลองอีกครั้ง</button>
   </div>
   <div class="container">
     <div class="header">
@@ -262,8 +261,6 @@
 
 <script>
   let userId = "";
-  let pollingTimeoutId = null;
-
   const USER_ID_STORAGE_KEY = "v45-liff-user-id";
 
   const form = document.getElementById("contractorForm");
@@ -272,7 +269,7 @@
   const formSection = document.getElementById("formSection");
   const loadingOverlay = document.getElementById("loadingOverlay");
   const loadingText = document.getElementById("loadingText");
-  const retryButton = document.getElementById("retryButton");
+  const overlaySpinner = document.getElementById("overlaySpinner");
 
   const fileInput = document.getElementById("fileUpload");
   const formElements = form.querySelectorAll("input, button");
@@ -287,34 +284,31 @@
     });
   }
 
-  function stopUserIdPolling() {
-    if (pollingTimeoutId) {
-      clearTimeout(pollingTimeoutId);
-      pollingTimeoutId = null;
-    }
-  }
-
   function handleUserIdResolved(resolvedUserId) {
     if (!resolvedUserId) {
       return;
     }
 
-    stopUserIdPolling();
     userId = resolvedUserId;
     sessionStorage.setItem(USER_ID_STORAGE_KEY, resolvedUserId);
     console.log("LINE User ID:", resolvedUserId);
-    retryButton.style.display = "none";
     loadingOverlay.classList.add("hidden");
     setFormEnabled(true);
   }
 
-  async function main() {
   function showLoading(message) {
     if (message) {
       loadingText.textContent = message;
     }
-    retryButton.style.display = "none";
+    overlaySpinner.style.display = "block";
     loadingOverlay.classList.remove("hidden");
+    setFormEnabled(false);
+  }
+
+  function showUserIdFailure(message) {
+    overlaySpinner.style.display = "none";
+    loadingOverlay.classList.remove("hidden");
+    loadingText.textContent = message || "ไม่สามารถดึงข้อมูลจาก LINE ได้ กรุณาปิดและเปิดหน้านี้ใหม่อีกครั้ง";
     setFormEnabled(false);
   }
 
@@ -323,27 +317,17 @@
       await liff.init({ liffId: "2008283290-7RLYvkdG" });
       if (!liff.isLoggedIn()) {
         liff.login();
-        return;
         return "login";
       }
-      const profile = await liff.getProfile();
-      userId = profile.userId;
-      console.log("LINE User ID:", userId);
       return "ready";
     } catch (err) {
       console.error("LIFF error:", err);
-      loadingText.textContent = "ไม่สามารถเชื่อมต่อ LINE ได้ กรุณาลองอีกครั้ง";
-      retryButton.style.display = "inline-flex";
+      showUserIdFailure("ไม่สามารถเชื่อมต่อ LINE ได้ กรุณาปิดและเปิดหน้านี้ใน LINE ใหม่อีกครั้ง");
       return "error";
     }
   }
-  main();
 
-  const form = document.getElementById("contractorForm");
-  const spinner = document.getElementById("spinner");
-  const thankYou = document.getElementById("thankYouMessage");
-  const formSection = document.getElementById("formSection");
-  async function pollForUserId(attempt = 1) {
+  async function requestUserId() {
     try {
       const profile = await liff.getProfile();
       if (profile?.userId) {
@@ -353,16 +337,11 @@
       throw new Error("Profile did not include a userId");
     } catch (error) {
       console.warn("Unable to fetch LINE User ID:", error);
-      loadingText.textContent = `กำลังโหลดข้อมูลจาก LINE ... (พยายามครั้งที่ ${attempt})`;
-      retryButton.style.display = "inline-flex";
-      pollingTimeoutId = setTimeout(() => pollForUserId(attempt + 1), 2000);
+      showUserIdFailure("ไม่สามารถดึงข้อมูลจาก LINE ได้ กรุณาปิดและเปิดหน้านี้ใน LINE ใหม่อีกครั้ง");
     }
   }
 
-  const fileInput = document.getElementById("fileUpload");
   async function startUserIdFlow() {
-    stopUserIdPolling();
-
     const storedUserId = sessionStorage.getItem(USER_ID_STORAGE_KEY);
     if (storedUserId) {
       handleUserIdResolved(storedUserId);
@@ -373,13 +352,9 @@
 
     const liffStatus = await initializeLiff();
     if (liffStatus === "ready") {
-      pollForUserId();
-    } else if (liffStatus === "error") {
-      pollingTimeoutId = setTimeout(() => startUserIdFlow(), 3000);
+      await requestUserId();
     }
   }
-
-  retryButton.addEventListener("click", startUserIdFlow);
 
   startUserIdFlow();
 
