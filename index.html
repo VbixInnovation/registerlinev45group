@@ -215,6 +215,7 @@
 </head>
 <body>
   <div class="loading-overlay hidden" id="loadingOverlay">
+  <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-spinner"></div>
     <div id="loadingText">กำลังโหลดข้อมูลจาก LINE ...</div>
     <button id="retryButton" type="button" style="display: none;">ลองอีกครั้ง</button>
@@ -318,6 +319,33 @@
   }
 
   async function initializeLiff() {
+  const form = document.getElementById("contractorForm");
+  const spinner = document.getElementById("spinner");
+  const thankYou = document.getElementById("thankYouMessage");
+  const formSection = document.getElementById("formSection");
+  const loadingOverlay = document.getElementById("loadingOverlay");
+  const loadingText = document.getElementById("loadingText");
+  const retryButton = document.getElementById("retryButton");
+
+  const fileInput = document.getElementById("fileUpload");
+  const formElements = form.querySelectorAll("input, button");
+
+  function setFormEnabled(isEnabled) {
+    formElements.forEach((element) => {
+      if (isEnabled) {
+        element.removeAttribute("disabled");
+      } else {
+        element.setAttribute("disabled", "disabled");
+      }
+    });
+  }
+
+  async function main() {
+    setFormEnabled(false);
+    loadingOverlay.classList.remove("hidden");
+    loadingText.textContent = "กำลังโหลดข้อมูลจาก LINE ...";
+    retryButton.style.display = "none";
+
     try {
       await liff.init({ liffId: "2008283290-7RLYvkdG" });
       if (!liff.isLoggedIn()) {
@@ -371,6 +399,21 @@
   retryButton.addEventListener("click", startUserIdFlow);
 
   startUserIdFlow();
+      const profile = await liff.getProfile();
+      userId = profile.userId;
+      console.log("LINE User ID:", userId);
+      loadingOverlay.classList.add("hidden");
+      setFormEnabled(true);
+    } catch (err) {
+      console.error("LIFF error:", err);
+      loadingText.textContent = "ไม่สามารถดึงข้อมูลจาก LINE ได้ กรุณาลองอีกครั้ง";
+      retryButton.style.display = "inline-flex";
+    }
+  }
+
+  retryButton.addEventListener("click", main);
+
+  main();
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
