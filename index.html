@@ -233,6 +233,9 @@
 
         <label>Line ID</label>
         <input type="text" id="lineId" placeholder="Line ID (ถ้ามี)">
+        
+        <label>หมายเหตุ</label>
+        <input type="textarea" id="reason" placeholder="หมายเหตุ (ไม่บังคับ)">
 
         <label>แนบเอกสารเพิ่มเติม *</label>
         <div class="upload-box">
@@ -306,6 +309,7 @@
     const projectName = document.getElementById("projectName").value;
     const contractNo = document.getElementById("contactPhone").value;
     const lineId = document.getElementById("lineId").value;
+    const reason = document.getElementById("reason").value;
     const payload = JSON.stringify({
       Contractor_Name: contractorName,
       Technician_Name: contactName,
@@ -313,6 +317,7 @@
       Line_ID: lineId,
       UserID: userId,
       Project_Name: projectName,
+      Reason: reason,
       // Additional_Attachment: attachments
     });
 
