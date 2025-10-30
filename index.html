@@ -323,15 +323,24 @@
     });
 
     try {
-      const endpoint = "https://development-v45group.kissflow.com/process/2/AcBm1i3UZPmE/Contractor_Task_Revision_A00/create/submit";
+      const accountID = "AcBm1i3NlfFk"
+      var domain = "development-v45group.kissflow.com"
+      var accessKey = "Ak398fdc64-143d-48b5-8237-0f6403b4f6a6"
+      var accessKeySecret = "rRGLEzJ0SFbbYC7jsSLsA84H1xCFZvTYS8PDUD2x1OcsTP4LEgP9-9ZHaiVdloVVmSvlM69nMdTVAY3eVPauPQ"
+      if(accountID=="AcBm1i3NlfFk"){
+        domain = "v45group.kissflow.com"
+        accessKey = "Ak986207c8-74d3-4363-ae8d-38d1c4aa2433"
+        accessKeySecret = "5FwMwEfdoOKAvodGiBlTbSiwBxHUIZpAP2xJc69qi-2hU8tcphSYxa-8BsTM277ICOpcZzVr1M5paCdW6QmnQ"
+      }
+      const endpoint = `https://${domain}/process/2/AcBm1i3UZPmE/Contractor_Task_Revision_A00/create/submit`;
       const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(endpoint)}`;
 
       const response = await fetch(proxyUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Access-Key-Id": "Ak398fdc64-143d-48b5-8237-0f6403b4f6a6",
-          "X-Access-Key-Secret": "rRGLEzJ0SFbbYC7jsSLsA84H1xCFZvTYS8PDUD2x1OcsTP4LEgP9-9ZHaiVdloVVmSvlM69nMdTVAY3eVPauPQ",
+          "X-Access-Key-Id": accessKey,
+          "X-Access-Key-Secret": accessKeySecret,
           "X-Requested-With": "XMLHttpRequest"
         },
         body: payload
@@ -367,20 +376,21 @@
       thankYou.style.display = "block";
     } catch (error) {
       console.error("❌ Error:", error);
-      alert("เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาลองอีกครั้ง");
+      alert("เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาปิดหน้าเว็บและลองใหม่อีกครั้ง");
     } finally {
       spinner.style.display = "none";
     }
   });
 
   async function uploadAttachments(recordId, activityInstanceId, files) {
-    const attachmentEndpoint = `https://development-v45group.kissflow.com/process/2/AcBm1i3UZPmE/Contractor_Task_Revision_A00/${recordId}/${activityInstanceId}/Additional_Attachment/attachment`;
+    const attachmentEndpoint = `https://v45group.kissflow.com/process/2/AcBm1i3UZPmE/Contractor_Task_Revision_A00/${recordId}/${activityInstanceId}/Additional_Attachment/attachment`;
     const proxyAttachmentUrl = `https://corsproxy.io/?${encodeURIComponent(attachmentEndpoint)}`;
 
     for (const file of files) {
+      if()
       const headers = new Headers();
-      headers.append("X-Access-Key-Id", "Ak398fdc64-143d-48b5-8237-0f6403b4f6a6");
-      headers.append("X-Access-Key-Secret", "rRGLEzJ0SFbbYC7jsSLsA84H1xCFZvTYS8PDUD2x1OcsTP4LEgP9-9ZHaiVdloVVmSvlM69nMdTVAY3eVPauPQ");
+      headers.append("X-Access-Key-Id", accessKey);
+      headers.append("X-Access-Key-Secret", accessKeySecret);
       headers.append("X-Requested-With", "XMLHttpRequest");
       headers.append("Cookie", "__cfruid=87bdc913a4345fdb11a9d759f0cf8c3b1692fd0e-1760586171");
 
