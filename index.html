@@ -74,9 +74,9 @@
     }
 
     input[type="text"],
-    input[type="textarea"],
     input[type="tel"],
-    input[type="file"] {
+    input[type="file"],
+    textarea {
       width: 100%;
       padding: 12px 14px;
       border: 1.5px solid #cfd8e3;
@@ -85,7 +85,8 @@
       transition: border-color 0.3s, box-shadow 0.3s;
     }
 
-    input:focus {
+    input:focus,
+    textarea:focus {
       border-color: #457b9d;
       box-shadow: 0 0 0 3px rgba(69, 123, 157, 0.2);
       outline: none;
@@ -196,9 +197,10 @@
       label {
         font-size: 14px;
       }
-      input[type="text"],
-      input[type="tel"],
-      input[type="file"] {
+    input[type="text"],
+    input[type="tel"],
+    input[type="file"],
+    textarea {
         font-size: 14px;
       }
     }
@@ -236,7 +238,7 @@
         <input type="text" id="lineId" placeholder="Line ID (ถ้ามี)">
         
         <label>หมายเหตุ</label>
-        <input type="textarea" id="reason" placeholder="หมายเหตุ (ไม่บังคับ)">
+        <textarea id="reason" placeholder="หมายเหตุ (ไม่บังคับ)"></textarea>
 
         <label>แนบเอกสารเพิ่มเติม *</label>
         <div class="upload-box">
@@ -264,6 +266,11 @@
   const thankYou = document.getElementById("thankYouMessage");
   const fileInput = document.getElementById("fileUpload");
   const authState = document.getElementById("authState");
+
+  let accountID = "AcBm1i3NlfFk";
+  let domain = "development-v45group.kissflow.com";
+  let accessKey = "Ak398fdc64-143d-48b5-8237-0f6403b4f6a6";
+  let accessKeySecret = "rRGLEzJ0SFbbYC7jsSLsA84H1xCFZvTYS8PDUD2x1OcsTP4LEgP9-9ZHaiVdloVVmSvlM69nMdTVAY3eVPauPQ";
 
   async function main() {
     try {
@@ -323,14 +330,10 @@
     });
 
     try {
-      const accountID = "AcBm1i3NlfFk"
-      var domain = "development-v45group.kissflow.com"
-      var accessKey = "Ak398fdc64-143d-48b5-8237-0f6403b4f6a6"
-      var accessKeySecret = "rRGLEzJ0SFbbYC7jsSLsA84H1xCFZvTYS8PDUD2x1OcsTP4LEgP9-9ZHaiVdloVVmSvlM69nMdTVAY3eVPauPQ"
-      if(accountID=="AcBm1i3NlfFk"){
-        domain = "v45group.kissflow.com"
-        accessKey = "Ak986207c8-74d3-4363-ae8d-38d1c4aa2433"
-        accessKeySecret = "5FwMwEfdoOKAvodGiBlTbSiwBxHUIZpAP2xJc69qi-2hU8tcphSYxa-8BsTM277ICOpcZzVr1M5paCdW6QmnQ"
+      if (accountID === "AcBm1i3NlfFk") {
+        domain = "v45group.kissflow.com";
+        accessKey = "Ak986207c8-74d3-4363-ae8d-38d1c4aa2433";
+        accessKeySecret = "5FwMwEfdoOKAvodGiBlTbSiwBxHUIZpAP2xJc69qi-2hU8tcphSYxa-8BsTM277ICOpcZzVr1M5paCdW6QmnQ";
       }
       const endpoint = `https://${domain}/process/2/AcBm1i3UZPmE/Contractor_Task_Revision_A00/create/submit`;
       const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(endpoint)}`;
@@ -387,7 +390,9 @@
     const proxyAttachmentUrl = `https://corsproxy.io/?${encodeURIComponent(attachmentEndpoint)}`;
 
     for (const file of files) {
-      if()
+      if (!file) {
+        continue;
+      }
       const headers = new Headers();
       headers.append("X-Access-Key-Id", accessKey);
       headers.append("X-Access-Key-Secret", accessKeySecret);
