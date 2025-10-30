@@ -405,6 +405,8 @@
       const formData = new FormData();
       formData.append("file", file, file.name);
 
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+
       const uploadResponse = await fetch(proxyAttachmentUrl, {
         method: "POST",
         headers,
