@@ -267,10 +267,10 @@
   const fileInput = document.getElementById("fileUpload");
   const authState = document.getElementById("authState");
 
-  var accountID = "AcBm1i3NlfFk";
-  var domain = "development-v45group.kissflow.com";
-  var accessKey = "Ak398fdc64-143d-48b5-8237-0f6403b4f6a6";
-  var accessKeySecret = "rRGLEzJ0SFbbYC7jsSLsA84H1xCFZvTYS8PDUD2x1OcsTP4LEgP9-9ZHaiVdloVVmSvlM69nMdTVAY3eVPauPQ";
+  let accountID = "AcBm1i3NlfFk";
+  let domain = "development-v45group.kissflow.com";
+  let accessKey = "Ak398fdc64-143d-48b5-8237-0f6403b4f6a6";
+  let accessKeySecret = "rRGLEzJ0SFbbYC7jsSLsA84H1xCFZvTYS8PDUD2x1OcsTP4LEgP9-9ZHaiVdloVVmSvlM69nMdTVAY3eVPauPQ";
    
   if (accountID == "AcBm1i3NlfFk") {
         domain = "v45group.kissflow.com";
@@ -337,7 +337,7 @@
     });
 
     try {
-      const endpoint = `https://${domain}/process/2/AcBm1i3UZPmE/Contractor_Task_Revision_A00/create/submit`;
+      const endpoint = `https://${domain}/process/2/${accountID}/Contractor_Task_Revision_A00/create/submit`;
       const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(endpoint)}`;
 
       const response = await fetch(proxyUrl, {
@@ -388,7 +388,7 @@
   });
 
   async function uploadAttachments(recordId, activityInstanceId, files) {
-    const attachmentEndpoint = `https://${domain}/process/2/AcBm1i3UZPmE/Contractor_Task_Revision_A00/${recordId}/${activityInstanceId}/Additional_Attachment/attachment`;
+    const attachmentEndpoint = `https://${domain}/process/2/${accountID}/Contractor_Task_Revision_A00/${recordId}/${activityInstanceId}/Additional_Attachment/attachment`;
     const proxyAttachmentUrl = `https://corsproxy.io/?${encodeURIComponent(attachmentEndpoint)}`;
 
     for (const file of files) {
