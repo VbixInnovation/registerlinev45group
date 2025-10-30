@@ -272,6 +272,12 @@
   let accessKey = "Ak398fdc64-143d-48b5-8237-0f6403b4f6a6";
   let accessKeySecret = "rRGLEzJ0SFbbYC7jsSLsA84H1xCFZvTYS8PDUD2x1OcsTP4LEgP9-9ZHaiVdloVVmSvlM69nMdTVAY3eVPauPQ";
 
+  if (accountID === "AcBm1i3NlfFk") {
+        domain = "v45group.kissflow.com";
+        accessKey = "Ak986207c8-74d3-4363-ae8d-38d1c4aa2433";
+        accessKeySecret = "5FwMwEfdoOKAvodGiBlTbSiwBxHUIZpAP2xJc69qi-2hU8tcphSYxa-8BsTM277ICOpcZzVr1M5paCdW6QmnQ";
+      }
+      console.log(domain)
   async function main() {
     try {
       await liff.init({ liffId: "2008283290-7RLYvkdG" });
@@ -330,12 +336,6 @@
     });
 
     try {
-      if (accountID === "AcBm1i3NlfFk") {
-        domain = "v45group.kissflow.com";
-        accessKey = "Ak986207c8-74d3-4363-ae8d-38d1c4aa2433";
-        accessKeySecret = "5FwMwEfdoOKAvodGiBlTbSiwBxHUIZpAP2xJc69qi-2hU8tcphSYxa-8BsTM277ICOpcZzVr1M5paCdW6QmnQ";
-      }
-      console.log(domain)
       const endpoint = `https://${domain}/process/2/AcBm1i3UZPmE/Contractor_Task_Revision_A00/create/submit`;
       const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(endpoint)}`;
 
