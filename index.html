@@ -141,6 +141,14 @@
       font-size: 17px;
     }
 
+    .thank-you.error h2 {
+      color: #c0392b;
+    }
+
+    .thank-you.error p {
+      color: #c0392b;
+    }
+
     .status-message {
       background: rgba(69, 123, 157, 0.08);
       border: 1px solid rgba(69, 123, 157, 0.2);
@@ -264,8 +272,11 @@
   const form = document.getElementById("contractorForm");
   const spinner = document.getElementById("spinner");
   const thankYou = document.getElementById("thankYouMessage");
+  const thankYouTitle = thankYou.querySelector("h2");
+  const thankYouBody = thankYou.querySelector("p");
   const fileInput = document.getElementById("fileUpload");
   const authState = document.getElementById("authState");
+  const submitButton = form.querySelector('button[type="submit"]');
 
   let accountID = "AcBm1i3NlfFk";
   let domain = "development-v45group.kissflow.com";
@@ -327,10 +338,17 @@
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     spinner.style.display = "block";
+    thankYou.style.display = "none";
+    thankYou.classList.remove("error");
 
     if (!userId) {
       spinner.style.display = "none";
-      alert("ไม่พบรหัสผู้ใช้ LINE กรุณาเปิดแบบฟอร์มจากแอป LINE อีกครั้ง");
+      showThankYouMessage({
+        title: "⚠️ ไม่พบรหัสผู้ใช้", 
+        message: "กรุณาเปิดแบบฟอร์มจากแอป LINE อีกครั้งเพื่อยืนยันตัวตนของคุณ",
+        isError: true,
+        lockForm: true
+      });
       return;
     }
 
@@ -350,6 +368,14 @@
       Reason: reason,
       // Additional_Attachment: attachments
     });
+
+    if (fileInput.files.length === 0) {
+      spinner.style.display = "none";
+      fileInput.reportValidity();
+      return;
+    }
+
+    submitButton.disabled = true;
 
     try {
       const endpoint = `https://${domain}/process/2/${accountID}/Contractor_Task_Revision_A00/create/submit`;
@@ -392,13 +418,26 @@
         await uploadAttachments(recordId, activityInstanceId, fileInput.files);
       }
 
-      formSection.style.display = "none";
-      thankYou.style.display = "block";
+      showThankYouMessage({
+        title: "✅ ขอบคุณที่กรอกข้อมูล",
+        message: "ระบบได้รับข้อมูลของคุณเรียบร้อยแล้ว ทีมงานจะติดต่อกลับโดยเร็วที่สุด",
+        isError: false,
+        lockForm: true
+      });
     } catch (error) {
       console.error("❌ Error:", error);
-      alert("เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาปิดหน้าเว็บและลองใหม่อีกครั้ง");
+      showThankYouMessage({
+        title: "❌ เกิดข้อผิดพลาด",
+        message: "ระบบไม่สามารถบันทึกข้อมูลได้ในขณะนี้ กรุณาตรวจสอบการเชื่อมต่อหรือลองใหม่อีกครั้ง",
+        isError: true,
+        lockForm: false
+      });
+      submitButton.disabled = false;
     } finally {
       spinner.style.display = "none";
+      if (!thankYou.classList.contains("error")) {
+        form.reset();
+      }
     }
   });
 
@@ -431,6 +470,18 @@
       }
 
       console.log(`📎 Uploaded attachment: ${file.name}`);
+    }
+  }
+
+  function showThankYouMessage({ title, message, isError, lockForm }) {
+    thankYouTitle.textContent = title;
+    thankYouBody.textContent = message;
+    thankYou.classList.toggle("error", Boolean(isError));
+    thankYou.style.display = "block";
+    if (lockForm) {
+      formSection.style.display = "none";
+    } else {
+      formSection.style.display = "block";
     }
   }
 </script>
