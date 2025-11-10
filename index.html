@@ -294,63 +294,12 @@
     formSection.style.display = "none";
   }
 
-  async function initLiff() {
-    const initPromise = liff.init({
-      liffId: "2008283290-7RLYvkdG",
-      withLoginOnExternalBrowser: true
-    });
-
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error("LIFF init timeout")), 8000);
-    });
-
-    await Promise.race([initPromise, timeoutPromise]);
-    await liff.ready;
-  }
-
-  async function main() {
-    try {
-      await initLiff();
-
-      if (!liff.isLoggedIn()) {
-        authState.textContent = "กำลังนำคุณไปเข้าสู่ระบบ LINE...";
-        liff.login({ redirectUri: window.location.href });
-        return;
-      }
-
-      const profile = await liff.getProfile();
-      userId = profile?.userId || "";
-
-      if (!userId) {
-        await displayAuthError("ไม่พบรหัสผู้ใช้ LINE ของคุณ");
-        return;
-      }
-
-      authState.style.display = "none";
-      formSection.style.display = "block";
-    } catch (err) {
-      console.error("LIFF error:", err);
-      await displayAuthError("ไม่สามารถตรวจสอบสิทธิ์ LINE ได้");
-    }
-  }
-  main();
-
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     spinner.style.display = "block";
     thankYou.style.display = "none";
     thankYou.classList.remove("error");
 
-    if (!userId) {
-      spinner.style.display = "none";
-      showThankYouMessage({
-        title: "⚠️ ไม่พบรหัสผู้ใช้", 
-        message: "กรุณาเปิดแบบฟอร์มจากแอป LINE อีกครั้งเพื่อยืนยันตัวตนของคุณ",
-        isError: true,
-        lockForm: true
-      });
-      return;
-    }
 
     const contractorName = document.getElementById("company").value;
     const contactName = document.getElementById("contactName").value;
