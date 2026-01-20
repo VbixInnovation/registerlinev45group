@@ -311,6 +311,11 @@
 
   async function main() {
     try {
+      try {
+    if (typeof liff === "undefined") {
+      await displayAuthError("ไม่สามารถโหลด LIFF SDK ได้ (liff is undefined)");
+      return;
+    }
       await initLiff();
 
       if (!liff.isLoggedIn()) {
@@ -329,12 +334,16 @@
 
       authState.style.display = "none";
       formSection.style.display = "block";
-    } catch (err) {
-      console.error("LIFF error:", err);
-      await displayAuthError("ไม่สามารถตรวจสอบสิทธิ์ LINE ได้");
-    }
+    }  catch (err) {
+    console.error("LIFF error:", err);
+    await displayAuthError("ไม่สามารถตรวจสอบสิทธิ์ LINE ได้");
   }
+
+  }
+window.addEventListener("load", () => {
   main();
+});
+
 
   function buildProxyUrl(endpoint) {
   // cache buster กัน proxy ตอบซ้ำ
