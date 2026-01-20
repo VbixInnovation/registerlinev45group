@@ -497,9 +497,6 @@ if (fileInput.files.length > 0) {
 }
       console.log("✅ Sent via Proxy:", submissionResult);
 
-      const recordId = submissionResult?._id;
-      const activityInstanceId = submissionResult?._activity_instance_id;
-
       if (!recordId || !activityInstanceId) {
         throw new Error("Missing record identifiers from submission response");
       }
