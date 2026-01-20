@@ -267,6 +267,7 @@
 
 <script>
   let userId = "";
+  let isSubmitting = false;
 
   const formSection = document.getElementById("formSection");
   const form = document.getElementById("contractorForm");
@@ -335,11 +336,95 @@
   }
   main();
 
+  function buildProxyUrl(endpoint) {
+  // cache buster กัน proxy ตอบซ้ำ
+  const bust = `_=${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  return `https://corsproxy.io/?${encodeURIComponent(endpoint + (endpoint.includes("?") ? "&" : "?") + bust)}`;
+}
+
+async function safeJson(response) {
+  const text = await response.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    // โยน error ที่อ่านง่าย พร้อม text ตัดสั้น
+    const preview = text?.slice(0, 300);
+    throw new Error(`Response is not JSON. status=${response.status} ${response.statusText}. bodyPreview=${preview}`);
+  }
+}
+
+async function postJsonViaProxy(endpoint, payloadObj, headersExtra = {}) {
+  const proxyUrl = buildProxyUrl(endpoint);
+
+  const response = await fetch(proxyUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      "X-Access-Key-Id": accessKey,
+      "X-Access-Key-Secret": accessKeySecret,
+      "X-Requested-With": "XMLHttpRequest",
+      ...headersExtra
+    },
+    body: JSON.stringify(payloadObj),
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    // ดึง body มาช่วย debug
+    const errText = await response.text().catch(() => "");
+    throw new Error(`Request failed: ${response.status} ${response.statusText}. bodyPreview=${errText.slice(0, 300)}`);
+  }
+
+  return safeJson(response);
+}
+function buildProxyUrl(endpoint) {
+  const bust = `_=${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  return `https://corsproxy.io/?${encodeURIComponent(endpoint + (endpoint.includes("?") ? "&" : "?") + bust)}`;
+}
+
+async function safeJson(response) {
+  const text = await response.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    const preview = text?.slice(0, 300);
+    throw new Error(`Response is not JSON. status=${response.status} ${response.statusText}. bodyPreview=${preview}`);
+  }
+}
+
+async function postJsonViaProxy(endpoint, payloadObj) {
+  const proxyUrl = buildProxyUrl(endpoint);
+
+  const response = await fetch(proxyUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      "X-Access-Key-Id": accessKey,
+      "X-Access-Key-Secret": accessKeySecret,
+      "X-Requested-With": "XMLHttpRequest"
+    },
+    body: JSON.stringify(payloadObj),
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    const errText = await response.text().catch(() => "");
+    throw new Error(`Request failed: ${response.status} ${response.statusText}. bodyPreview=${errText.slice(0, 300)}`);
+  }
+
+  return safeJson(response);
+}
+
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (isSubmitting) return;
+  isSubmitting = true;
     spinner.style.display = "block";
     thankYou.style.display = "none";
     thankYou.classList.remove("error");
+
 
     if (!userId) {
       spinner.style.display = "none";
@@ -379,32 +464,29 @@
 
     try {
       const endpoint = `https://${domain}/process/2/${accountID}/Contractor_Task_Revision_A00/create/submit`;
-      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(endpoint)}`;
 
-      const response = await fetch(proxyUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Access-Key-Id": accessKey,
-          "X-Access-Key-Secret": accessKeySecret,
-          "X-Requested-With": "XMLHttpRequest"
-        },
-        body: payload
-      });
+const submissionResult = await postJsonViaProxy(endpoint, {
+  Contractor_Name: contractorName,
+  Technician_Name: contactName,
+  Contract_No: contractNo,
+  Line_ID: lineId,
+  UserID: userId,
+  Project_Name: projectName,
+  Reason: reason
+});
 
-      if (!response.ok) {
-        throw new Error(`Request failed: ${response.status} ${response.statusText}`);
-      }
+console.log("✅ Sent via Proxy:", submissionResult);
 
-      const responseText = await response.text();
-      let submissionResult;
+const recordId = submissionResult?._id;
+const activityInstanceId = submissionResult?._activity_instance_id;
 
-      try {
-        submissionResult = JSON.parse(responseText);
-      } catch (parseError) {
-        throw new Error(`Unable to parse submission response: ${responseText}`);
-      }
+if (!recordId || !activityInstanceId) {
+  throw new Error(`Missing record identifiers. got=${JSON.stringify(submissionResult).slice(0, 300)}`);
+}
 
+if (fileInput.files.length > 0) {
+  await uploadAttachments(recordId, activityInstanceId, fileInput.files);
+}
       console.log("✅ Sent via Proxy:", submissionResult);
 
       const recordId = submissionResult?._id;
@@ -434,6 +516,7 @@
       });
       submitButton.disabled = false;
     } finally {
+isSubmitting = false;
       spinner.style.display = "none";
       if (!thankYou.classList.contains("error")) {
         form.reset();
@@ -441,39 +524,37 @@
     }
   });
 
-  async function uploadAttachments(recordId, activityInstanceId, files) {
-    const attachmentEndpoint = `https://${domain}/process/2/${accountID}/Contractor_Task_Revision_A00/${recordId}/${activityInstanceId}/Additional_Attachment/attachment`;
-    const proxyAttachmentUrl = `https://corsproxy.io/?${encodeURIComponent(attachmentEndpoint)}`;
+ async function uploadAttachments(recordId, activityInstanceId, files) {
+  const attachmentEndpoint =
+    `https://${domain}/process/2/${accountID}/Contractor_Task_Revision_A00/${recordId}/${activityInstanceId}/Additional_Attachment/attachment`;
+  const proxyAttachmentUrl = buildProxyUrl(attachmentEndpoint);
 
-    for (const file of files) {
-      if (!file) {
-        continue;
-      }
-      const headers = new Headers();
-      headers.append("X-Access-Key-Id", accessKey);
-      headers.append("X-Access-Key-Secret", accessKeySecret);
-      headers.append("X-Requested-With", "XMLHttpRequest");
-      headers.append("Cookie", "__cfruid=87bdc913a4345fdb11a9d759f0cf8c3b1692fd0e-1760586171");
+  for (const file of Array.from(files)) {
+    if (!file) continue;
 
-      const formData = new FormData();
-      formData.append("file", file, file.name);
+    const formData = new FormData();
+    formData.append("file", file, file.name);
 
-      const uploadResponse = await fetch(proxyAttachmentUrl, {
-        method: "POST",
-        headers,
-        body: formData,
-        redirect: "follow"
-      });
+    const uploadResponse = await fetch(proxyAttachmentUrl, {
+      method: "POST",
+      headers: {
+        "X-Access-Key-Id": accessKey,
+        "X-Access-Key-Secret": accessKeySecret,
+        "X-Requested-With": "XMLHttpRequest"
+      },
+      body: formData,
+      cache: "no-store"
+    });
 
-      if (!uploadResponse.ok) {
-        throw new Error(`Attachment upload failed: ${uploadResponse.status} ${uploadResponse.statusText}`);
-      }
-
-      console.log(`📎 Uploaded attachment: ${file.name}`);
-      recordId = ""
-      activityInstanceId = ""
+    if (!uploadResponse.ok) {
+      const errText = await uploadResponse.text().catch(() => "");
+      throw new Error(`Attachment upload failed: ${uploadResponse.status} ${uploadResponse.statusText}. bodyPreview=${errText.slice(0, 200)}`);
     }
+
+    console.log(`📎 Uploaded attachment: ${file.name}`);
   }
+}
+
 
   function showThankYouMessage({ title, message, isError, lockForm }) {
     thankYouTitle.textContent = title;
