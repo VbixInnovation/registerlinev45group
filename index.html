@@ -513,29 +513,21 @@ const activityInstanceId = submissionResult?._activity_instance_id;
  const WORKER_BASE = "https://v45-kissflow-proxy.kissflow.workers.dev";
 
 async function uploadAttachments(recordId, activityInstanceId, files) {
-  for (const file of Array.from(files || [])) {
-    if (!file) continue;
+  const formData = new FormData();
 
-    const formData = new FormData();
-    formData.append("files", file, file.name);
-
-    const url = `${WORKER_BASE}/upload?recordId=${encodeURIComponent(recordId)}&activityInstanceId=${encodeURIComponent(activityInstanceId)}`;
-
-    const resp = await fetch(url, {
-      method: "POST",
-      body: formData,
-      cache: "no-store",
-    });
-
-    const text = await resp.text();
-    if (!resp.ok) {
-      throw new Error(`Attachment upload failed: ${resp.status} ${text.slice(0, 200)}`);
-    }
-
-    console.log("📎 Uploaded:", file.name, text.slice(0, 120));
+  // ส่งหลายไฟล์เป็น files[] (รูปแบบที่พบบ่อยสุด)
+  for (const f of Array.from(files || [])) {
+    formData.append("files[]", f, f.name);
   }
-}
 
+  const url = `${WORKER_BASE}/upload?recordId=${encodeURIComponent(recordId)}&activityInstanceId=${encodeURIComponent(activityInstanceId)}`;
+
+  const resp = await fetch(url, { method: "POST", body: formData });
+  const text = await resp.text();
+
+  if (!resp.ok) throw new Error(`Attachment upload failed: ${resp.status} ${text.slice(0, 300)}`);
+  return text;
+}
 
   function showThankYouMessage({ title, message, isError, lockForm }) {
     thankYouTitle.textContent = title;
