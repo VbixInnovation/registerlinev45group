@@ -508,13 +508,13 @@ const activityInstanceId = submissionResult?._activity_instance_id;
       console.error("❌ Error:", error);
       showThankYouMessage({
         title: "❌ เกิดข้อผิดพลาด",
-        message: "ระบบไม่สามารถบันทึกข้อมูลได้ในขณะนี้ กรุณาตรวจสอบการเชื่อมต่อหรือลองใหม่อีกครั้ง",
+        message: "ระบบไม่สามารถบันทึกข้อมูลได้ในขณะนี้ กรุณาตรวจสอบการเชื่อมต่อหรือลองใหม่อีกครั้ง ถ้าหากมีข้อความแจ้งเตือนใบงานสำเร็จรบกวนไม่ส่งข้อมูลซ้ำ",
         isError: true,
-        lockForm: false
+        lockForm: true
       });
       submitButton.disabled = false;
     } finally {
-isSubmitting = false;
+      isSubmitting = false;
       spinner.style.display = "none";
       if (!thankYou.classList.contains("error")) {
         form.reset();
