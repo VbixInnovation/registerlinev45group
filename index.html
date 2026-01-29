@@ -510,34 +510,29 @@ const activityInstanceId = submissionResult?._activity_instance_id;
     }
   });
 
- async function uploadAttachments(recordId, activityInstanceId, files) {
-  const attachmentEndpoint =
-    `https://${domain}/process/2/${accountID}/Contractor_Task_Revision_A00/${recordId}/${activityInstanceId}/Additional_Attachment/attachment`;
-  const proxyAttachmentUrl = buildProxyUrl(attachmentEndpoint);
+ const WORKER_BASE = "https://v45-kissflow-proxy.kissflow.workers.dev";
 
-  for (const file of Array.from(files)) {
+async function uploadAttachments(recordId, activityInstanceId, files) {
+  for (const file of Array.from(files || [])) {
     if (!file) continue;
 
     const formData = new FormData();
     formData.append("file", file, file.name);
 
-    const uploadResponse = await fetch(proxyAttachmentUrl, {
+    const url = `${WORKER_BASE}/upload?recordId=${encodeURIComponent(recordId)}&activityInstanceId=${encodeURIComponent(activityInstanceId)}`;
+
+    const resp = await fetch(url, {
       method: "POST",
-      headers: {
-        "X-Access-Key-Id": accessKey,
-        "X-Access-Key-Secret": accessKeySecret,
-        "X-Requested-With": "XMLHttpRequest"
-      },
       body: formData,
-      cache: "no-store"
+      cache: "no-store",
     });
 
-    if (!uploadResponse.ok) {
-      const errText = await uploadResponse.text().catch(() => "");
-      throw new Error(`Attachment upload failed: ${uploadResponse.status} ${uploadResponse.statusText}. bodyPreview=${errText.slice(0, 200)}`);
+    const text = await resp.text();
+    if (!resp.ok) {
+      throw new Error(`Attachment upload failed: ${resp.status} ${text.slice(0, 200)}`);
     }
 
-    console.log(`📎 Uploaded attachment: ${file.name}`);
+    console.log("📎 Uploaded:", file.name, text.slice(0, 120));
   }
 }
 
