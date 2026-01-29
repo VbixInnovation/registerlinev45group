@@ -517,7 +517,7 @@ async function uploadAttachments(recordId, activityInstanceId, files) {
     if (!file) continue;
 
     const formData = new FormData();
-    formData.append("file", file, file.name);
+    formData.append("files", file, file.name);
 
     const url = `${WORKER_BASE}/upload?recordId=${encodeURIComponent(recordId)}&activityInstanceId=${encodeURIComponent(activityInstanceId)}`;
 
