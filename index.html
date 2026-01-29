@@ -401,20 +401,16 @@ async function safeJson(response) {
   }
 }
 
-const WORKER_SUBMIT_URL = "v45-kissflow-proxy.kissflow.workers.dev/submit";
+const WORKER_SUBMIT_URL = "https://v45-kissflow-proxy.kissflow.workers.dev/submit";
+
 async function postJson(payloadObj) {
   const response = await fetch(WORKER_SUBMIT_URL, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Accept": "application/json",
-    },
+    headers: { "Content-Type": "application/json", "Accept": "application/json" },
     body: JSON.stringify(payloadObj),
-    cache: "no-store"
   });
-
   const text = await response.text();
-  if (!response.ok) throw new Error(`Submit failed: ${response.status} ${text.slice(0, 300)}`);
+  if (!response.ok) throw new Error(`Submit failed: ${response.status} ${text.slice(0, 200)}`);
   return JSON.parse(text);
 }
 
