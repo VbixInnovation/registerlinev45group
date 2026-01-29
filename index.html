@@ -1,486 +1,486 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>แบบฟอร์มส่งใบเสนอราคา | V45 Group</title>
-<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
-<style>
-body {
-font-family: "Prompt", sans-serif;
-background: linear-gradient(135deg, #e8f0fe 0%, #ffffff 100%);
-margin: 0;
-padding: 24px 12px;
-color: #333;
-min-height: 100vh;
-display: flex;
-justify-content: center;
-align-items: center;
-box-sizing: border-box;
-}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>แบบฟอร์มส่งใบเสนอราคา | V45 Group</title>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: "Prompt", sans-serif;
+      background: linear-gradient(135deg, #e8f0fe 0%, #ffffff 100%);
+      margin: 0;
+      padding: 24px 12px;
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-sizing: border-box;
+    }
 
-.container {
-background: #fff;
-border-radius: 16px;
-box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-width: 95%;
-max-width: 720px;
-padding: 40px 50px;
-animation: fadeIn 0.8s ease-in-out;
-}
+    .container {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      width: 95%;
+      max-width: 720px;
+      padding: 40px 50px;
+      animation: fadeIn 0.8s ease-in-out;
+    }
 
-@keyframes fadeIn {
-from { opacity: 0; transform: translateY(20px); }
-to { opacity: 1; transform: translateY(0); }
-}
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
-.header {
-display: flex;
-align-items: center;
-justify-content: center;
-flex-direction: column;
-margin-bottom: 30px;
-text-align: center;
-}
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      margin-bottom: 30px;
+      text-align: center;
+    }
 
-.header img {
-width: 70px;
-height: 70px;
-margin-bottom: 10px;
-}
+    .header img {
+      width: 70px;
+      height: 70px;
+      margin-bottom: 10px;
+    }
 
-.header h2 {
-color: #1d3557;
-font-weight: 600;
-margin-bottom: 5px;
-}
+    .header h2 {
+      color: #1d3557;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
 
-.header p {
-color: #666;
-font-size: 15px;
-}
+    .header p {
+      color: #666;
+      font-size: 15px;
+    }
 
-form {
-display: flex;
-flex-direction: column;
-gap: 22px;
-}
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
 
-label {
-font-weight: 600;
-margin-bottom: 6px;
-display: block;
-color: #1d3557;
-}
+    label {
+      font-weight: 600;
+      margin-bottom: 6px;
+      display: block;
+      color: #1d3557;
+    }
 
-input[type="text"],
-input[type="tel"],
-input[type="file"],
-textarea {
-width: 100%;
-padding: 12px 14px;
-border: 1.5px solid #cfd8e3;
-border-radius: 8px;
-font-size: 15px;
-transition: border-color 0.3s, box-shadow 0.3s;
-}
+    input[type="text"],
+    input[type="tel"],
+    input[type="file"],
+    textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid #cfd8e3;
+      border-radius: 8px;
+      font-size: 15px;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
 
-input:focus,
-textarea:focus {
-border-color: #457b9d;
-box-shadow: 0 0 0 3px rgba(69, 123, 157, 0.2);
-outline: none;
-}
+    input:focus,
+    textarea:focus {
+      border-color: #457b9d;
+      box-shadow: 0 0 0 3px rgba(69, 123, 157, 0.2);
+      outline: none;
+    }
 
-.upload-box {
-border: 2px dashed #cbd5e1;
-background: #f8fafc;
-padding: 30px;
-text-align: center;
-border-radius: 10px;
-color: #666;
-transition: all 0.3s ease;
-}
+    .upload-box {
+      border: 2px dashed #cbd5e1;
+      background: #f8fafc;
+      padding: 30px;
+      text-align: center;
+      border-radius: 10px;
+      color: #666;
+      transition: all 0.3s ease;
+    }
 
-.upload-box:hover {
-background: #edf2f7;
-border-color: #457b9d;
-}
+    .upload-box:hover {
+      background: #edf2f7;
+      border-color: #457b9d;
+    }
 
-button {
-background-color: #457b9d;
-color: white;
-border: none;
-padding: 14px 0;
-border-radius: 8px;
-font-size: 17px;
-font-weight: 600;
-cursor: pointer;
-transition: background 0.3s, transform 0.2s;
-}
+    button {
+      background-color: #457b9d;
+      color: white;
+      border: none;
+      padding: 14px 0;
+      border-radius: 8px;
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+    }
 
-button:hover {
-background-color: #1d3557;
-transform: translateY(-2px);
-}
+    button:hover {
+      background-color: #1d3557;
+      transform: translateY(-2px);
+    }
 
-.thank-you {
-display: none;
-text-align: center;
-padding: 50px 0;
-}
+    .thank-you {
+      display: none;
+      text-align: center;
+      padding: 50px 0;
+    }
 
-.thank-you h2 {
-color: #1d3557;
-font-size: 28px;
-margin-bottom: 10px;
-}
+    .thank-you h2 {
+      color: #1d3557;
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
 
-.thank-you p {
-color: #555;
-font-size: 17px;
-}
+    .thank-you p {
+      color: #555;
+      font-size: 17px;
+    }
 
-.thank-you.error h2 {
-color: #c0392b;
-}
+    .thank-you.error h2 {
+      color: #c0392b;
+    }
 
-.thank-you.error p {
-color: #c0392b;
-}
+    .thank-you.error p {
+      color: #c0392b;
+    }
 
-.status-message {
-background: rgba(69, 123, 157, 0.08);
-border: 1px solid rgba(69, 123, 157, 0.2);
-color: #1d3557;
-border-radius: 10px;
-padding: 16px 18px;
-margin-bottom: 24px;
-font-size: 15px;
-line-height: 1.6;
-}
+    .status-message {
+      background: rgba(69, 123, 157, 0.08);
+      border: 1px solid rgba(69, 123, 157, 0.2);
+      color: #1d3557;
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin-bottom: 24px;
+      font-size: 15px;
+      line-height: 1.6;
+    }
 
-.status-message.error {
-background: rgba(231, 76, 60, 0.1);
-border-color: rgba(231, 76, 60, 0.4);
-color: #c0392b;
-}
+    .status-message.error {
+      background: rgba(231, 76, 60, 0.1);
+      border-color: rgba(231, 76, 60, 0.4);
+      color: #c0392b;
+    }
 
-.status-message .hint {
-margin-top: 4px;
-font-size: 14px;
-color: inherit;
-opacity: 0.85;
-}
+    .status-message .hint {
+      margin-top: 4px;
+      font-size: 14px;
+      color: inherit;
+      opacity: 0.85;
+    }
 
-/* Loading Spinner */
-.spinner {
-border: 4px solid #f3f3f3;
-border-top: 4px solid #457b9d;
-border-radius: 50%;
-width: 30px;
-height: 30px;
-animation: spin 0.8s linear infinite;
-margin: 20px auto;
-display: none;
-}
+    /* Loading Spinner */
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #457b9d;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 0.8s linear infinite;
+      margin: 20px auto;
+      display: none;
+    }
 
-@keyframes spin {
-0% { transform: rotate(0deg); }
-100% { transform: rotate(360deg); }
-}
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
 
-@media (max-width: 600px) {
-body {
-padding: 18px 12px 32px;
-align-items: flex-start;
-}
-.container {
-padding: 28px 18px 36px;
-box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
-}
-h2 {
-font-size: 20px;
-}
-label {
-font-size: 14px;
-}
-input[type="text"],
-input[type="tel"],
-input[type="file"],
-textarea {
-font-size: 14px;
-}
-}
-</style>
-<script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
+    @media (max-width: 600px) {
+      body {
+        padding: 18px 12px 32px;
+        align-items: flex-start;
+      }
+      .container {
+        padding: 28px 18px 36px;
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+      }
+      h2 {
+        font-size: 20px;
+      }
+      label {
+        font-size: 14px;
+      }
+    input[type="text"],
+    input[type="tel"],
+    input[type="file"],
+    textarea {
+        font-size: 14px;
+      }
+    }
+  </style>
+  <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
 </head>
 <body>
-<div class="container">
-<div class="header">
-<img src="https://raw.githubusercontent.com/VbixInnovation/registerlinev45group/main/V45Logo.png" alt="V45 Group Logo">
-<h2>แบบฟอร์มส่งใบเสนอราคา</h2>
-<p>กรอกข้อมูลด้านล่างเพื่อส่งใบเสนอราคา V45 Group</p>
-</div>
+  <div class="container">
+    <div class="header">
+      <img src="https://raw.githubusercontent.com/VbixInnovation/registerlinev45group/main/V45Logo.png" alt="V45 Group Logo">
+      <h2>แบบฟอร์มส่งใบเสนอราคา</h2>
+      <p>กรอกข้อมูลด้านล่างเพื่อส่งใบเสนอราคา V45 Group</p>
+    </div>
 
-<div id="authState" class="status-message">
-กำลังตรวจสอบสิทธิ์การใช้งาน LINE ของคุณ...
-<div class="hint">หากหน้านี้ไม่เปลี่ยนแปลง โปรดเปิดแบบฟอร์มผ่านแอป LINE บนอุปกรณ์มือถือของคุณ</div>
-</div>
+    <div id="authState" class="status-message">
+      กำลังตรวจสอบสิทธิ์การใช้งาน LINE ของคุณ...
+      <div class="hint">หากหน้านี้ไม่เปลี่ยนแปลง โปรดเปิดแบบฟอร์มผ่านแอป LINE บนอุปกรณ์มือถือของคุณ</div>
+    </div>
 
-<div id="formSection" style="display: none;">
-<form id="contractorForm">
-<label>บริษัท/ ชื่อ-นามสกุล (ที่ต้องการระบุในเอกสาร) *</label>
-<input type="text" id="company" placeholder="เช่น บริษัท วีโฟร์ตี้ไฟว์ จำกัด" required>
+    <div id="formSection" style="display: none;">
+      <form id="contractorForm">
+        <label>บริษัท/ ชื่อ-นามสกุล (ที่ต้องการระบุในเอกสาร) *</label>
+        <input type="text" id="company" placeholder="เช่น บริษัท วีโฟร์ตี้ไฟว์ จำกัด" required>
 
-<label>ชื่อโครงการ *</label>
-<input type="text" id="projectName" placeholder="เช่น โครงการปรับปรุงระบบไฟฟ้า" required>
+        <label>ชื่อโครงการ *</label>
+        <input type="text" id="projectName" placeholder="เช่น โครงการปรับปรุงระบบไฟฟ้า" required>
 
-<label>ชื่อผู้ติดต่อ *</label>
-<input type="text" id="contactName" placeholder="ชื่อ-นามสกุล ผู้ติดต่อ" required>
+        <label>ชื่อผู้ติดต่อ *</label>
+        <input type="text" id="contactName" placeholder="ชื่อ-นามสกุล ผู้ติดต่อ" required>
 
-<label>เบอร์ติดต่อ *</label>
-<input type="tel" id="contactPhone" placeholder="เช่น 099-999-9999" required>
+        <label>เบอร์ติดต่อ *</label>
+        <input type="tel" id="contactPhone" placeholder="เช่น 099-999-9999" required>
 
-<label>Line ID</label>
-<input type="text" id="lineId" placeholder="Line ID (ถ้ามี)">
+        <label>Line ID</label>
+        <input type="text" id="lineId" placeholder="Line ID (ถ้ามี)">
+        
+        <label>หมายเหตุ</label>
+        <textarea id="reason" placeholder="หมายเหตุ (ไม่บังคับ)"></textarea>
 
-<label>หมายเหตุ</label>
-<textarea id="reason" placeholder="หมายเหตุ (ไม่บังคับ)"></textarea>
+        <label>แนบเอกสารเพิ่มเติม *</label>
+        <div class="upload-box">
+          <input type="file" id="fileUpload" multiple required>
+          <p>ลากไฟล์มาวางที่นี่ หรือคลิกเพื่ออัปโหลด</p>
+        </div>
 
-<label>แนบเอกสารเพิ่มเติม *</label>
-<div class="upload-box">
-<input type="file" id="fileUpload" multiple required>
-<p>ลากไฟล์มาวางที่นี่ หรือคลิกเพื่ออัปโหลด</p>
-</div>
+        <div class="spinner" id="spinner"></div>
+        <button type="submit">📤 ส่งข้อมูล</button>
+      </form>
+    </div>
 
-<div class="spinner" id="spinner"></div>
-<button type="submit">📤 ส่งข้อมูล</button>
-</form>
-</div>
-
-<div class="thank-you" id="thankYouMessage">
-<h2>✅ ขอบคุณที่กรอกข้อมูล</h2>
-<p>ระบบได้รับข้อมูลของคุณเรียบร้อยแล้ว ทีมงานจะติดต่อกลับโดยเร็วที่สุด</p>
-</div>
-</div>
+    <div class="thank-you" id="thankYouMessage">
+      <h2>✅ ขอบคุณที่กรอกข้อมูล</h2>
+      <p>ระบบได้รับข้อมูลของคุณเรียบร้อยแล้ว ทีมงานจะติดต่อกลับโดยเร็วที่สุด</p>
+    </div>
+  </div>
 
 <script>
-let userId = "";
-let isSubmitting = false;
+  let userId = "";
+  let isSubmitting = false;
 
-const formSection = document.getElementById("formSection");
-const form = document.getElementById("contractorForm");
-const spinner = document.getElementById("spinner");
-const thankYou = document.getElementById("thankYouMessage");
-const thankYouTitle = thankYou.querySelector("h2");
-const thankYouBody = thankYou.querySelector("p");
-const fileInput = document.getElementById("fileUpload");
-const authState = document.getElementById("authState");
-const submitButton = form.querySelector('button[type="submit"]');
+  const formSection = document.getElementById("formSection");
+  const form = document.getElementById("contractorForm");
+  const spinner = document.getElementById("spinner");
+  const thankYou = document.getElementById("thankYouMessage");
+  const thankYouTitle = thankYou.querySelector("h2");
+  const thankYouBody = thankYou.querySelector("p");
+  const fileInput = document.getElementById("fileUpload");
+  const authState = document.getElementById("authState");
+  const submitButton = form.querySelector('button[type="submit"]');
 
-let accountID = "AcBm1i3NlfFk";
-let domain = "development-v45group.kissflow.com";
-let accessKey = "Ak398fdc64-143d-48b5-8237-0f6403b4f6a6";
-let accessKeySecret = "rRGLEzJ0SFbbYC7jsSLsA84H1xCFZvTYS8PDUD2x1OcsTP4LEgP9-9ZHaiVdloVVmSvlM69nMdTVAY3eVPauPQ";
+  let accountID = "AcBm1i3NlfFk";
+  let domain = "development-v45group.kissflow.com";
+  let accessKey = "Ak398fdc64-143d-48b5-8237-0f6403b4f6a6";
+  let accessKeySecret = "rRGLEzJ0SFbbYC7jsSLsA84H1xCFZvTYS8PDUD2x1OcsTP4LEgP9-9ZHaiVdloVVmSvlM69nMdTVAY3eVPauPQ";
+   
+  if (accountID == "AcBm1i3NlfFk") {
+        domain = "v45group.kissflow.com";
+        accessKey = "Ak986207c8-74d3-4363-ae8d-38d1c4aa2433";
+        accessKeySecret = "5FwMwEfdoOKAvodGiBlTbSiwBxHUIZpAP2xJc69qi-2hU8tcphSYxa-8BsTM277ICOpcZzVr1M5paCdW6QmnQ";
+    }
+  async function displayAuthError(message) {
+    authState.classList.add("error");
+    authState.innerHTML = `${message} <div class="hint">โปรดลองปิดหน้าเว็บและเปิดขึ้นมาใหม่ หรือเข้าผ่านแอป LINE โดยตรง</div>`;
+    formSection.style.display = "none";
+  }
 
-if (accountID == "AcBm1i3NlfFk") {
-domain = "v45group.kissflow.com";
-accessKey = "Ak986207c8-74d3-4363-ae8d-38d1c4aa2433";
-accessKeySecret = "5FwMwEfdoOKAvodGiBlTbSiwBxHUIZpAP2xJc69qi-2hU8tcphSYxa-8BsTM277ICOpcZzVr1M5paCdW6QmnQ";
-}
-async function displayAuthError(message) {
-authState.classList.add("error");
-authState.innerHTML = `${message} <div class="hint">โปรดลองปิดหน้าเว็บและเปิดขึ้นมาใหม่ หรือเข้าผ่านแอป LINE โดยตรง</div>`;
-formSection.style.display = "none";
-}
+  async function initLiff() {
+    const initPromise = liff.init({
+      liffId: "2008283290-7RLYvkdG",
+      withLoginOnExternalBrowser: true
+    });
 
-async function initLiff() {
-const initPromise = liff.init({
-liffId: "2008283290-7RLYvkdG",
-withLoginOnExternalBrowser: true
-});
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("LIFF init timeout")), 8000);
+    });
 
-const timeoutPromise = new Promise((_, reject) => {
-setTimeout(() => reject(new Error("LIFF init timeout")), 8000);
-});
+    await Promise.race([initPromise, timeoutPromise]);
+    await liff.ready;
+  }
 
-await Promise.race([initPromise, timeoutPromise]);
-await liff.ready;
-}
+  async function main() {
+      try {
+    if (typeof liff === "undefined") {
+      await displayAuthError("ไม่สามารถโหลด LIFF SDK ได้ (liff is undefined)");
+      return;
+    }
+      await initLiff();
 
-async function main() {
-try {
-if (typeof liff === "undefined") {
-await displayAuthError("ไม่สามารถโหลด LIFF SDK ได้ (liff is undefined)");
-return;
-}
-await initLiff();
+      if (!liff.isLoggedIn()) {
+        authState.textContent = "กำลังนำคุณไปเข้าสู่ระบบ LINE...";
+        liff.login({ redirectUri: window.location.href });
+        return;
+      }
 
-if (!liff.isLoggedIn()) {
-authState.textContent = "กำลังนำคุณไปเข้าสู่ระบบ LINE...";
-liff.login({ redirectUri: window.location.href });
-return;
-}
+      const profile = await liff.getProfile();
+      userId = profile?.userId || "";
 
-const profile = await liff.getProfile();
-userId = profile?.userId || "";
+      if (!userId) {
+        await displayAuthError("ไม่พบรหัสผู้ใช้ LINE ของคุณ");
+        return;
+      }
 
-if (!userId) {
-await displayAuthError("ไม่พบรหัสผู้ใช้ LINE ของคุณ");
-return;
-}
+      authState.style.display = "none";
+      formSection.style.display = "block";
+    }  catch (err) {
+    console.error("LIFF error:", err);
+    await displayAuthError("ไม่สามารถตรวจสอบสิทธิ์ LINE ได้");
+  }
 
-authState.style.display = "none";
-formSection.style.display = "block";
-}  catch (err) {
-console.error("LIFF error:", err);
-await displayAuthError("ไม่สามารถตรวจสอบสิทธิ์ LINE ได้");
-}
-
-}
+  }
 window.addEventListener("load", () => {
-main();
+  main();
 });
 
 
-function buildProxyUrl(endpoint) {
-// cache buster กัน proxy ตอบซ้ำ
-const bust = `_=${Date.now()}_${Math.random().toString(16).slice(2)}`;
-return `https://corsproxy.io/?${encodeURIComponent(endpoint + (endpoint.includes("?") ? "&" : "?") + bust)}`;
+  function buildProxyUrl(endpoint) {
+  // cache buster กัน proxy ตอบซ้ำ
+  const bust = `_=${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  return `https://corsproxy.io/?${encodeURIComponent(endpoint + (endpoint.includes("?") ? "&" : "?") + bust)}`;
 }
 
 async function safeJson(response) {
-const text = await response.text();
-try {
-return JSON.parse(text);
-} catch {
-// โยน error ที่อ่านง่าย พร้อม text ตัดสั้น
-const preview = text?.slice(0, 300);
-throw new Error(`Response is not JSON. status=${response.status} ${response.statusText}. bodyPreview=${preview}`);
-}
+  const text = await response.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    // โยน error ที่อ่านง่าย พร้อม text ตัดสั้น
+    const preview = text?.slice(0, 300);
+    throw new Error(`Response is not JSON. status=${response.status} ${response.statusText}. bodyPreview=${preview}`);
+  }
 }
 
 async function postJsonViaProxy(endpoint, payloadObj, headersExtra = {}) {
-const proxyUrl = buildProxyUrl(endpoint);
+  const proxyUrl = buildProxyUrl(endpoint);
 
-const response = await fetch(proxyUrl, {
-method: "POST",
-headers: {
-"Content-Type": "application/json",
-"Accept": "application/json",
-"X-Access-Key-Id": accessKey,
-"X-Access-Key-Secret": accessKeySecret,
-"X-Requested-With": "XMLHttpRequest",
-...headersExtra
-},
-body: JSON.stringify(payloadObj),
-cache: "no-store"
-});
+  const response = await fetch(proxyUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      "X-Access-Key-Id": accessKey,
+      "X-Access-Key-Secret": accessKeySecret,
+      "X-Requested-With": "XMLHttpRequest",
+      ...headersExtra
+    },
+    body: JSON.stringify(payloadObj),
+    cache: "no-store"
+  });
 
-if (!response.ok) {
-// ดึง body มาช่วย debug
-const errText = await response.text().catch(() => "");
-throw new Error(`Request failed: ${response.status} ${response.statusText}. bodyPreview=${errText.slice(0, 300)}`);
-}
+  if (!response.ok) {
+    // ดึง body มาช่วย debug
+    const errText = await response.text().catch(() => "");
+    throw new Error(`Request failed: ${response.status} ${response.statusText}. bodyPreview=${errText.slice(0, 300)}`);
+  }
 
-return safeJson(response);
+  return safeJson(response);
 }
 function buildProxyUrl(endpoint) {
-const bust = `_=${Date.now()}_${Math.random().toString(16).slice(2)}`;
-return `https://corsproxy.io/?${encodeURIComponent(endpoint + (endpoint.includes("?") ? "&" : "?") + bust)}`;
+  const bust = `_=${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  return `https://corsproxy.io/?${encodeURIComponent(endpoint + (endpoint.includes("?") ? "&" : "?") + bust)}`;
 }
 
 async function safeJson(response) {
-const text = await response.text();
-try {
-return JSON.parse(text);
-} catch {
-const preview = text?.slice(0, 300);
-throw new Error(`Response is not JSON. status=${response.status} ${response.statusText}. bodyPreview=${preview}`);
-}
+  const text = await response.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    const preview = text?.slice(0, 300);
+    throw new Error(`Response is not JSON. status=${response.status} ${response.statusText}. bodyPreview=${preview}`);
+  }
 }
 
 async function postJsonViaProxy(endpoint, payloadObj) {
-const proxyUrl = buildProxyUrl(endpoint);
+  const proxyUrl = buildProxyUrl(endpoint);
 
-const response = await fetch(proxyUrl, {
-method: "POST",
-headers: {
-"Content-Type": "application/json",
-"Accept": "application/json",
-"X-Access-Key-Id": accessKey,
-"X-Access-Key-Secret": accessKeySecret,
-"X-Requested-With": "XMLHttpRequest"
-},
-body: JSON.stringify(payloadObj),
-cache: "no-store"
-});
+  const response = await fetch(proxyUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      "X-Access-Key-Id": accessKey,
+      "X-Access-Key-Secret": accessKeySecret,
+      "X-Requested-With": "XMLHttpRequest"
+    },
+    body: JSON.stringify(payloadObj),
+    cache: "no-store"
+  });
 
-if (!response.ok) {
-const errText = await response.text().catch(() => "");
-throw new Error(`Request failed: ${response.status} ${response.statusText}. bodyPreview=${errText.slice(0, 300)}`);
+  if (!response.ok) {
+    const errText = await response.text().catch(() => "");
+    throw new Error(`Request failed: ${response.status} ${response.statusText}. bodyPreview=${errText.slice(0, 300)}`);
+  }
+
+  return safeJson(response);
 }
 
-return safeJson(response);
-}
-
-form.addEventListener("submit", async (event) => {
-event.preventDefault();
-if (isSubmitting) return;
-isSubmitting = true;
-spinner.style.display = "block";
-thankYou.style.display = "none";
-thankYou.classList.remove("error");
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (isSubmitting) return;
+  isSubmitting = true;
+    spinner.style.display = "block";
+    thankYou.style.display = "none";
+    thankYou.classList.remove("error");
 
 
-if (!userId) {
-spinner.style.display = "none";
-showThankYouMessage({
-title: "⚠️ ไม่พบรหัสผู้ใช้", 
-message: "กรุณาเปิดแบบฟอร์มจากแอป LINE อีกครั้งเพื่อยืนยันตัวตนของคุณ",
-isError: true,
-lockForm: true
-});
-return;
-}
+    if (!userId) {
+      spinner.style.display = "none";
+      showThankYouMessage({
+        title: "⚠️ ไม่พบรหัสผู้ใช้", 
+        message: "กรุณาเปิดแบบฟอร์มจากแอป LINE อีกครั้งเพื่อยืนยันตัวตนของคุณ",
+        isError: true,
+        lockForm: true
+      });
+      return;
+    }
 
-const contractorName = document.getElementById("company").value;
-const contactName = document.getElementById("contactName").value;
-const projectName = document.getElementById("projectName").value;
-const contractNo = document.getElementById("contactPhone").value;
-const lineId = document.getElementById("lineId").value;
-const reason = document.getElementById("reason").value;
-const payload = JSON.stringify({
-Contractor_Name: contractorName,
-Technician_Name: contactName,
-Contract_No: contractNo,
-Line_ID: lineId,
-UserID: userId,
-Project_Name: projectName,
-Reason: reason,
-// Additional_Attachment: attachments
-});
+    const contractorName = document.getElementById("company").value;
+    const contactName = document.getElementById("contactName").value;
+    const projectName = document.getElementById("projectName").value;
+    const contractNo = document.getElementById("contactPhone").value;
+    const lineId = document.getElementById("lineId").value;
+    const reason = document.getElementById("reason").value;
+    const payload = JSON.stringify({
+      Contractor_Name: contractorName,
+      Technician_Name: contactName,
+      Contract_No: contractNo,
+      Line_ID: lineId,
+      UserID: userId,
+      Project_Name: projectName,
+      Reason: reason,
+      // Additional_Attachment: attachments
+    });
 
-if (fileInput.files.length === 0) {
-spinner.style.display = "none";
-fileInput.reportValidity();
-return;
-}
+    if (fileInput.files.length === 0) {
+      spinner.style.display = "none";
+      fileInput.reportValidity();
+      return;
+    }
 
-submitButton.disabled = true;
+    submitButton.disabled = true;
 
-try {
-const endpoint = `https://${domain}/process/2/${accountID}/Contractor_Task_Revision_A00/create/submit`;
+    try {
+      const endpoint = `https://${domain}/process/2/${accountID}/Contractor_Task_Revision_A00/create/submit`;
 
 const submissionResult = await postJsonViaProxy(endpoint, {
-Contractor_Name: contractorName,
-Technician_Name: contactName,
-Contract_No: contractNo,
-Line_ID: lineId,
-UserID: userId,
-Project_Name: projectName,
-Reason: reason
+  Contractor_Name: contractorName,
+  Technician_Name: contactName,
+  Contract_No: contractNo,
+  Line_ID: lineId,
+  UserID: userId,
+  Project_Name: projectName,
+  Reason: reason
 });
 
 console.log("✅ Sent via Proxy:", submissionResult);
@@ -488,90 +488,83 @@ console.log("✅ Sent via Proxy:", submissionResult);
 const recordId = submissionResult?._id;
 const activityInstanceId = submissionResult?._activity_instance_id;
 
-if (!recordId || !activityInstanceId) {
-  throw new Error(`Missing record identifiers. got=${JSON.stringify(submissionResult).slice(0, 300)}`);
-}
+      console.log("✅ Sent via Proxy:", submissionResult);
 
-if (fileInput.files.length > 0) {
-  await uploadAttachments(recordId, activityInstanceId, fileInput.files);
-}
-console.log("✅ Sent via Proxy:", submissionResult);
+      if (!recordId || !activityInstanceId) {
+        throw new Error("Missing record identifiers from submission response");
+      }
 
-if (!recordId || !activityInstanceId) {
-throw new Error("Missing record identifiers from submission response");
-}
+      if (fileInput.files.length > 0) {
+        await uploadAttachments(recordId, activityInstanceId, fileInput.files);
+      }
 
-if (fileInput.files.length > 0) {
-await uploadAttachments(recordId, activityInstanceId, fileInput.files);
-}
-
-showThankYouMessage({
-title: "✅ ขอบคุณที่กรอกข้อมูล",
-message: "ระบบได้รับข้อมูลของคุณเรียบร้อยแล้ว ทีมงานจะติดต่อกลับโดยเร็วที่สุด",
-isError: false,
-lockForm: true
-});
-} catch (error) {
-console.error("❌ Error:", error);
-showThankYouMessage({
-title: "❌ เกิดข้อผิดพลาด",
-message: "ระบบไม่สามารถบันทึกข้อมูลได้ในขณะนี้ กรุณาตรวจสอบการเชื่อมต่อหรือลองใหม่อีกครั้ง",
-isError: true,
-lockForm: false
-});
-submitButton.disabled = false;
-} finally {
+      showThankYouMessage({
+        title: "✅ ขอบคุณที่กรอกข้อมูล",
+        message: "ระบบได้รับข้อมูลของคุณเรียบร้อยแล้ว ทีมงานจะติดต่อกลับโดยเร็วที่สุด",
+        isError: false,
+        lockForm: true
+      });
+    } catch (error) {
+      console.error("❌ Error:", error);
+      showThankYouMessage({
+        title: "❌ เกิดข้อผิดพลาด",
+        message: "ระบบไม่สามารถบันทึกข้อมูลได้ในขณะนี้ กรุณาตรวจสอบการเชื่อมต่อหรือลองใหม่อีกครั้ง",
+        isError: true,
+        lockForm: false
+      });
+      submitButton.disabled = false;
+    } finally {
 isSubmitting = false;
-spinner.style.display = "none";
-if (!thankYou.classList.contains("error")) {
-form.reset();
+      spinner.style.display = "none";
+      if (!thankYou.classList.contains("error")) {
+        form.reset();
+      }
+    }
+  });
+
+ async function uploadAttachments(recordId, activityInstanceId, files) {
+  const attachmentEndpoint =
+    `https://${domain}/process/2/${accountID}/Contractor_Task_Revision_A00/${recordId}/${activityInstanceId}/Additional_Attachment/attachment`;
+  const proxyAttachmentUrl = buildProxyUrl(attachmentEndpoint);
+
+  for (const file of Array.from(files)) {
+    if (!file) continue;
+
+    const formData = new FormData();
+    formData.append("file", file, file.name);
+
+    const uploadResponse = await fetch(proxyAttachmentUrl, {
+      method: "POST",
+      headers: {
+        "X-Access-Key-Id": accessKey,
+        "X-Access-Key-Secret": accessKeySecret,
+        "X-Requested-With": "XMLHttpRequest"
+      },
+      body: formData,
+      cache: "no-store"
+    });
+
+    if (!uploadResponse.ok) {
+      const errText = await uploadResponse.text().catch(() => "");
+      throw new Error(`Attachment upload failed: ${uploadResponse.status} ${uploadResponse.statusText}. bodyPreview=${errText.slice(0, 200)}`);
+    }
+
+    console.log(`📎 Uploaded attachment: ${file.name}`);
+  }
 }
-}
-});
-
-async function uploadAttachments(recordId, activityInstanceId, files) {
-const attachmentEndpoint =
-`https://${domain}/process/2/${accountID}/Contractor_Task_Revision_A00/${recordId}/${activityInstanceId}/Additional_Attachment/attachment`;
-const proxyAttachmentUrl = buildProxyUrl(attachmentEndpoint);
-
-for (const file of Array.from(files)) {
-if (!file) continue;
-
-const formData = new FormData();
-formData.append("file", file, file.name);
-
-const uploadResponse = await fetch(proxyAttachmentUrl, {
-method: "POST",
-headers: {
-"X-Access-Key-Id": accessKey,
-"X-Access-Key-Secret": accessKeySecret,
-"X-Requested-With": "XMLHttpRequest"
-},
-body: formData,
-cache: "no-store"
-});
-
-if (!uploadResponse.ok) {
-const errText = await uploadResponse.text().catch(() => "");
-throw new Error(`Attachment upload failed: ${uploadResponse.status} ${uploadResponse.statusText}. bodyPreview=${errText.slice(0, 200)}`);
-}
-
-console.log(`📎 Uploaded attachment: ${file.name}`);
-}
-}
 
 
-function showThankYouMessage({ title, message, isError, lockForm }) {
-thankYouTitle.textContent = title;
-thankYouBody.textContent = message;
-thankYou.classList.toggle("error", Boolean(isError));
-thankYou.style.display = "block";
-if (lockForm) {
-formSection.style.display = "none";
-} else {
-formSection.style.display = "block";
-}
-}
+  function showThankYouMessage({ title, message, isError, lockForm }) {
+    thankYouTitle.textContent = title;
+    thankYouBody.textContent = message;
+    thankYou.classList.toggle("error", Boolean(isError));
+    thankYou.style.display = "block";
+    if (lockForm) {
+      formSection.style.display = "none";
+    } else {
+      formSection.style.display = "block";
+    }
+  }
 </script>
 
 
