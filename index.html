@@ -472,7 +472,7 @@ async function postJsonViaProxy(endpoint, payloadObj) {
 
     try {
       const endpoint = `https://${domain}/process/2/${accountID}/Contractor_Task_Revision_A00/create/submit`;
-
+console.log(endpoint)
 const submissionResult = await postJsonViaProxy(endpoint, {
   Contractor_Name: contractorName,
   Technician_Name: contactName,
@@ -525,6 +525,7 @@ const activityInstanceId = submissionResult?._activity_instance_id;
  async function uploadAttachments(recordId, activityInstanceId, files) {
   const attachmentEndpoint =
     `https://${domain}/process/2/${accountID}/Contractor_Task_Revision_A00/${recordId}/${activityInstanceId}/Additional_Attachment/attachment`;
+   console.log(attachmentEndpoint)
   const proxyAttachmentUrl = buildProxyUrl(attachmentEndpoint);
 
   for (const file of Array.from(files)) {
