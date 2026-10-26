@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -30,8 +31,15 @@
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .header {
@@ -76,17 +84,47 @@
     input[type="text"],
     input[type="tel"],
     input[type="file"],
-    textarea {
+    textarea,
+    select {
       width: 100%;
       padding: 12px 14px;
       border: 1.5px solid #cfd8e3;
       border-radius: 8px;
       font-size: 15px;
+      font-family: inherit;
+      color: #333;
+      background-color: #fff;
+      box-sizing: border-box;
       transition: border-color 0.3s, box-shadow 0.3s;
     }
 
+    select {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      padding-right: 40px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23457b9d' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: calc(100% - 14px) center;
+      background-size: 16px;
+      cursor: pointer;
+    }
+
+    select:hover {
+      border-color: #457b9d;
+    }
+
+    select:invalid {
+      color: #888;
+    }
+
+    select option {
+      color: #333;
+    }
+
     input:focus,
-    textarea:focus {
+    textarea:focus,
+    select:focus {
       border-color: #457b9d;
       box-shadow: 0 0 0 3px rgba(69, 123, 157, 0.2);
       outline: none;
@@ -186,8 +224,13 @@
     }
 
     @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
     }
 
     @media (max-width: 600px) {
@@ -195,30 +238,37 @@
         padding: 18px 12px 32px;
         align-items: flex-start;
       }
+
       .container {
         padding: 28px 18px 36px;
         box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
       }
+
       h2 {
         font-size: 20px;
       }
+
       label {
         font-size: 14px;
       }
-    input[type="text"],
-    input[type="tel"],
-    input[type="file"],
-    textarea {
+
+      input[type="text"],
+      input[type="tel"],
+      input[type="file"],
+      textarea,
+      select {
         font-size: 14px;
       }
     }
   </style>
   <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
 </head>
+
 <body>
   <div class="container">
     <div class="header">
-      <img src="https://raw.githubusercontent.com/VbixInnovation/registerlinev45group/main/V45Logo.png" alt="V45 Group Logo">
+      <img src="https://raw.githubusercontent.com/VbixInnovation/registerlinev45group/main/V45Logo.png"
+        alt="V45 Group Logo">
       <h2>แบบฟอร์มส่งใบเสนอราคา</h2>
       <p>กรอกข้อมูลด้านล่างเพื่อส่งใบเสนอราคา V45 Group</p>
     </div>
@@ -236,6 +286,14 @@
         <label>ชื่อโครงการ *</label>
         <input type="text" id="projectName" placeholder="เช่น โครงการปรับปรุงระบบไฟฟ้า" required>
 
+        <label for="contractorType">ประเภทงาน *</label>
+        <select name="contractorType" id="contractorType" required>
+          <option value="" disabled selected hidden>เลือกประเภทงาน</option>
+          <option value="pre_con">งาน Pre-Construction</option>
+          <option value="main_add">งานหลัก/งานเพิ่ม</option>
+          <option value="pwa_pea">งานขอน้ำ-ไฟ</option>
+        </select>
+
         <label>ชื่อผู้ติดต่อ *</label>
         <input type="text" id="contactName" placeholder="ชื่อ-นามสกุล ผู้ติดต่อ" required>
 
@@ -244,7 +302,7 @@
 
         <label>Line ID</label>
         <input type="text" id="lineId" placeholder="Line ID (ถ้ามี)">
-        
+
         <label>หมายเหตุ</label>
         <textarea id="reason" placeholder="หมายเหตุ (ไม่บังคับ)"></textarea>
 
@@ -266,283 +324,287 @@
     </div>
   </div>
 
-<script>
-  let userId = "";
-  let isSubmitting = false;
+  <script>
+    let userId = "";
+    let isSubmitting = false;
 
-  const formSection = document.getElementById("formSection");
-  const form = document.getElementById("contractorForm");
-  const spinner = document.getElementById("spinner");
-  const thankYou = document.getElementById("thankYouMessage");
-  const thankYouTitle = thankYou.querySelector("h2");
-  const thankYouBody = thankYou.querySelector("p");
-  const fileInput = document.getElementById("fileUpload");
-  const authState = document.getElementById("authState");
-  const submitButton = form.querySelector('button[type="submit"]');
+    const formSection = document.getElementById("formSection");
+    const form = document.getElementById("contractorForm");
+    const spinner = document.getElementById("spinner");
+    const thankYou = document.getElementById("thankYouMessage");
+    const thankYouTitle = thankYou.querySelector("h2");
+    const thankYouBody = thankYou.querySelector("p");
+    const fileInput = document.getElementById("fileUpload");
+    const authState = document.getElementById("authState");
+    const submitButton = form.querySelector('button[type="submit"]');
 
-  let accountID = "AcBm1i3NlfFk";
-  let domain = "development-v45group.kissflow.com";
-  let accessKey = "Ak398fdc64-143d-48b5-8237-0f6403b4f6a6";
-  let accessKeySecret = "rRGLEzJ0SFbbYC7jsSLsA84H1xCFZvTYS8PDUD2x1OcsTP4LEgP9-9ZHaiVdloVVmSvlM69nMdTVAY3eVPauPQ";
-   
-  if (accountID == "AcBm1i3NlfFk") {
-        domain = "v45group.kissflow.com";
-        accessKey = "Ak986207c8-74d3-4363-ae8d-38d1c4aa2433";
-        accessKeySecret = "5FwMwEfdoOKAvodGiBlTbSiwBxHUIZpAP2xJc69qi-2hU8tcphSYxa-8BsTM277ICOpcZzVr1M5paCdW6QmnQ";
+    let accountID = "AcBm1i3NlfFk";
+    let domain = "development-v45group.kissflow.com";
+    let accessKey = "Ak398fdc64-143d-48b5-8237-0f6403b4f6a6";
+    let accessKeySecret = "rRGLEzJ0SFbbYC7jsSLsA84H1xCFZvTYS8PDUD2x1OcsTP4LEgP9-9ZHaiVdloVVmSvlM69nMdTVAY3eVPauPQ";
+
+    if (accountID == "AcBm1i3NlfFk") {
+      domain = "v45group.kissflow.com";
+      accessKey = "Ak986207c8-74d3-4363-ae8d-38d1c4aa2433";
+      accessKeySecret = "5FwMwEfdoOKAvodGiBlTbSiwBxHUIZpAP2xJc69qi-2hU8tcphSYxa-8BsTM277ICOpcZzVr1M5paCdW6QmnQ";
     }
-  async function displayAuthError(message) {
-    authState.classList.add("error");
-    authState.innerHTML = `${message} <div class="hint">โปรดลองปิดหน้าเว็บและเปิดขึ้นมาใหม่ หรือเข้าผ่านแอป LINE โดยตรง</div>`;
-    formSection.style.display = "none";
-  }
 
-  async function initLiff() {
-    const initPromise = liff.init({
-      liffId: "2008283290-7RLYvkdG",
-      withLoginOnExternalBrowser: true
-    });
+    async function displayAuthError(message) {
+      authState.classList.add("error");
+      authState.innerHTML = `${message} <div class="hint">โปรดลองปิดหน้าเว็บและเปิดขึ้นมาใหม่ หรือเข้าผ่านแอป LINE โดยตรง</div>`;
+      formSection.style.display = "none";
+    }
 
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error("LIFF init timeout")), 8000);
-    });
+    async function initLiff() {
+      const initPromise = liff.init({
+        liffId: "2008283290-7RLYvkdG",
+        withLoginOnExternalBrowser: true
+      });
 
-    await Promise.race([initPromise, timeoutPromise]);
-    await liff.ready;
-  }
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("LIFF init timeout")), 8000);
+      });
 
-  async function main() {
+      await Promise.race([initPromise, timeoutPromise]);
+      await liff.ready;
+    }
+
+    async function main() {
       try {
-    if (typeof liff === "undefined") {
-      await displayAuthError("ไม่สามารถโหลด LIFF SDK ได้ (liff is undefined)");
-      return;
-    }
-      await initLiff();
+        if (typeof liff === "undefined") {
+          await displayAuthError("ไม่สามารถโหลด LIFF SDK ได้ (liff is undefined)");
+          return;
+        }
+        await initLiff();
 
-      if (!liff.isLoggedIn()) {
-        authState.textContent = "กำลังนำคุณไปเข้าสู่ระบบ LINE...";
-        liff.login({ redirectUri: window.location.href });
-        return;
+        if (!liff.isLoggedIn()) {
+          authState.textContent = "กำลังนำคุณไปเข้าสู่ระบบ LINE...";
+          liff.login({ redirectUri: window.location.href });
+          return;
+        }
+
+        const profile = await liff.getProfile();
+        userId = profile?.userId || "";
+
+        if (!userId) {
+          await displayAuthError("ไม่พบรหัสผู้ใช้ LINE ของคุณ");
+          return;
+        }
+
+        authState.style.display = "none";
+        formSection.style.display = "block";
+      } catch (err) {
+        console.error("LIFF error:", err);
+        await displayAuthError("ไม่สามารถตรวจสอบสิทธิ์ LINE ได้");
       }
 
-      const profile = await liff.getProfile();
-      userId = profile?.userId || "";
+    }
+    window.addEventListener("load", () => {
+      main();
+    });
+
+    function buildProxyUrl(endpoint) {
+      // cache buster กัน proxy ตอบซ้ำ
+      const bust = `_=${Date.now()}_${Math.random().toString(16).slice(2)}`;
+      return `https://corsproxy.io/?${encodeURIComponent(endpoint + (endpoint.includes("?") ? "&" : "?") + bust)}`;
+    }
+
+    async function safeJson(response) {
+      const text = await response.text();
+      try {
+        return JSON.parse(text);
+      } catch {
+        // โยน error ที่อ่านง่าย พร้อม text ตัดสั้น
+        const preview = text?.slice(0, 300);
+        throw new Error(`Response is not JSON. status=${response.status} ${response.statusText}. bodyPreview=${preview}`);
+      }
+    }
+
+    async function postJsonViaProxy(endpoint, payloadObj, headersExtra = {}) {
+      const proxyUrl = buildProxyUrl(endpoint);
+
+      const response = await fetch(proxyUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "X-Access-Key-Id": accessKey,
+          "X-Access-Key-Secret": accessKeySecret,
+          "X-Requested-With": "XMLHttpRequest",
+          ...headersExtra
+        },
+        body: JSON.stringify(payloadObj),
+        cache: "no-store"
+      });
+
+      if (!response.ok) {
+        // ดึง body มาช่วย debug
+        const errText = await response.text().catch(() => "");
+        throw new Error(`Request failed: ${response.status} ${response.statusText}. bodyPreview=${errText.slice(0, 300)}`);
+      }
+
+      return safeJson(response);
+    }
+    function buildProxyUrl(endpoint) {
+      const bust = `_=${Date.now()}_${Math.random().toString(16).slice(2)}`;
+      return `https://corsproxy.io/?${encodeURIComponent(endpoint + (endpoint.includes("?") ? "&" : "?") + bust)}`;
+    }
+
+    async function safeJson(response) {
+      const text = await response.text();
+      try {
+        return JSON.parse(text);
+      } catch {
+        const preview = text?.slice(0, 300);
+        throw new Error(`Response is not JSON. status=${response.status} ${response.statusText}. bodyPreview=${preview}`);
+      }
+    }
+
+    const WORKER_SUBMIT_URL = "https://v45-kissflow-proxy.kissflow.workers.dev/submit";
+
+    async function postJson(payloadObj) {
+      const response = await fetch(WORKER_SUBMIT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify(payloadObj),
+      });
+      const text = await response.text();
+      if (!response.ok) throw new Error(`Submit failed: ${response.status} ${text.slice(0, 200)}`);
+      return JSON.parse(text);
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (isSubmitting) return;
+      isSubmitting = true;
+      spinner.style.display = "block";
+      thankYou.style.display = "none";
+      thankYou.classList.remove("error");
+
 
       if (!userId) {
-        await displayAuthError("ไม่พบรหัสผู้ใช้ LINE ของคุณ");
+        spinner.style.display = "none";
+        showThankYouMessage({
+          title: "⚠️ ไม่พบรหัสผู้ใช้",
+          message: "กรุณาเปิดแบบฟอร์มจากแอป LINE อีกครั้งเพื่อยืนยันตัวตนของคุณ",
+          isError: true,
+          lockForm: true
+        });
         return;
       }
 
-      authState.style.display = "none";
-      formSection.style.display = "block";
-    }  catch (err) {
-    console.error("LIFF error:", err);
-    await displayAuthError("ไม่สามารถตรวจสอบสิทธิ์ LINE ได้");
-  }
-
-  }
-window.addEventListener("load", () => {
-  main();
-});
-
-
-  function buildProxyUrl(endpoint) {
-  // cache buster กัน proxy ตอบซ้ำ
-  const bust = `_=${Date.now()}_${Math.random().toString(16).slice(2)}`;
-  return `https://corsproxy.io/?${encodeURIComponent(endpoint + (endpoint.includes("?") ? "&" : "?") + bust)}`;
-}
-
-async function safeJson(response) {
-  const text = await response.text();
-  try {
-    return JSON.parse(text);
-  } catch {
-    // โยน error ที่อ่านง่าย พร้อม text ตัดสั้น
-    const preview = text?.slice(0, 300);
-    throw new Error(`Response is not JSON. status=${response.status} ${response.statusText}. bodyPreview=${preview}`);
-  }
-}
-
-async function postJsonViaProxy(endpoint, payloadObj, headersExtra = {}) {
-  const proxyUrl = buildProxyUrl(endpoint);
-
-  const response = await fetch(proxyUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Accept": "application/json",
-      "X-Access-Key-Id": accessKey,
-      "X-Access-Key-Secret": accessKeySecret,
-      "X-Requested-With": "XMLHttpRequest",
-      ...headersExtra
-    },
-    body: JSON.stringify(payloadObj),
-    cache: "no-store"
-  });
-
-  if (!response.ok) {
-    // ดึง body มาช่วย debug
-    const errText = await response.text().catch(() => "");
-    throw new Error(`Request failed: ${response.status} ${response.statusText}. bodyPreview=${errText.slice(0, 300)}`);
-  }
-
-  return safeJson(response);
-}
-function buildProxyUrl(endpoint) {
-  const bust = `_=${Date.now()}_${Math.random().toString(16).slice(2)}`;
-  return `https://corsproxy.io/?${encodeURIComponent(endpoint + (endpoint.includes("?") ? "&" : "?") + bust)}`;
-}
-
-async function safeJson(response) {
-  const text = await response.text();
-  try {
-    return JSON.parse(text);
-  } catch {
-    const preview = text?.slice(0, 300);
-    throw new Error(`Response is not JSON. status=${response.status} ${response.statusText}. bodyPreview=${preview}`);
-  }
-}
-
-const WORKER_SUBMIT_URL = "https://v45-kissflow-proxy.kissflow.workers.dev/submit";
-
-async function postJson(payloadObj) {
-  const response = await fetch(WORKER_SUBMIT_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Accept": "application/json" },
-    body: JSON.stringify(payloadObj),
-  });
-  const text = await response.text();
-  if (!response.ok) throw new Error(`Submit failed: ${response.status} ${text.slice(0, 200)}`);
-  return JSON.parse(text);
-}
-
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    if (isSubmitting) return;
-  isSubmitting = true;
-    spinner.style.display = "block";
-    thankYou.style.display = "none";
-    thankYou.classList.remove("error");
-
-
-    if (!userId) {
-      spinner.style.display = "none";
-      showThankYouMessage({
-        title: "⚠️ ไม่พบรหัสผู้ใช้", 
-        message: "กรุณาเปิดแบบฟอร์มจากแอป LINE อีกครั้งเพื่อยืนยันตัวตนของคุณ",
-        isError: true,
-        lockForm: true
+      const contractorName = document.getElementById("company").value;
+      const contactName = document.getElementById("contactName").value;
+      const projectName = document.getElementById("projectName").value;
+      const contractorType = document.getElementById("contractorType").value;
+      const contractNo = document.getElementById("contactPhone").value;
+      const lineId = document.getElementById("lineId").value;
+      const reason = document.getElementById("reason").value;
+      const payload = JSON.stringify({
+        Contractor_Name: contractorName,
+        Technician_Name: contactName,
+        Contract_No: contractNo,
+        Line_ID: lineId,
+        UserID: userId,
+        Project_Name: projectName,
+        Contractor_Type: contractorType,
+        Reason: reason,
+        // Additional_Attachment: attachments
       });
-      return;
-    }
 
-    const contractorName = document.getElementById("company").value;
-    const contactName = document.getElementById("contactName").value;
-    const projectName = document.getElementById("projectName").value;
-    const contractNo = document.getElementById("contactPhone").value;
-    const lineId = document.getElementById("lineId").value;
-    const reason = document.getElementById("reason").value;
-    const payload = JSON.stringify({
-      Contractor_Name: contractorName,
-      Technician_Name: contactName,
-      Contract_No: contractNo,
-      Line_ID: lineId,
-      UserID: userId,
-      Project_Name: projectName,
-      Reason: reason,
-      // Additional_Attachment: attachments
+      if (fileInput.files.length === 0) {
+        spinner.style.display = "none";
+        fileInput.reportValidity();
+        return;
+      }
+
+      submitButton.disabled = true;
+
+      try {
+        const submissionResult = await postJson({
+          Contractor_Name: contractorName,
+          Technician_Name: contactName,
+          Contract_No: contractNo,
+          Line_ID: lineId,
+          UserID: userId,
+          Project_Name: projectName,
+          Contractor_Type: contractorType,
+          Reason: reason
+        });
+
+
+        console.log("✅ Sent via Proxy:", submissionResult);
+
+        const recordId = submissionResult?._id;
+        const activityInstanceId = submissionResult?._activity_instance_id;
+
+        console.log("✅ Sent via Proxy:", submissionResult);
+
+        if (!recordId || !activityInstanceId) {
+          throw new Error("Missing record identifiers from submission response");
+        }
+
+        if (fileInput.files.length > 0) {
+          await uploadAttachments(recordId, activityInstanceId, fileInput.files);
+        }
+
+        showThankYouMessage({
+          title: "✅ ขอบคุณที่กรอกข้อมูล",
+          message: "ระบบได้รับข้อมูลของคุณเรียบร้อยแล้ว ทีมงานจะติดต่อกลับโดยเร็วที่สุด",
+          isError: false,
+          lockForm: true
+        });
+      } catch (error) {
+        console.error("❌ Error:", error);
+        showThankYouMessage({
+          title: "❌ เกิดข้อผิดพลาด",
+          message: "ระบบไม่สามารถบันทึกข้อมูลได้ในขณะนี้ กรุณาตรวจสอบการเชื่อมต่อหรือลองใหม่อีกครั้ง ถ้าหากมีข้อความแจ้งเตือนใบงานสำเร็จรบกวนไม่ส่งข้อมูลซ้ำ",
+          isError: true,
+          lockForm: true
+        });
+        submitButton.disabled = false;
+      } finally {
+        isSubmitting = false;
+        spinner.style.display = "none";
+        if (!thankYou.classList.contains("error")) {
+          form.reset();
+        }
+      }
     });
 
-    if (fileInput.files.length === 0) {
-      spinner.style.display = "none";
-      fileInput.reportValidity();
-      return;
-    }
+    const WORKER_BASE = "https://v45-kissflow-proxy.kissflow.workers.dev";
 
-    submitButton.disabled = true;
+    async function uploadAttachments(recordId, activityInstanceId, files) {
+      const formData = new FormData();
 
-    try {
-      const submissionResult = await postJson({
-      Contractor_Name: contractorName,
-      Technician_Name: contactName,
-      Contract_No: contractNo,
-      Line_ID: lineId,
-      UserID: userId,
-      Project_Name: projectName,
-      Reason: reason
-    });
-
-
-console.log("✅ Sent via Proxy:", submissionResult);
-
-const recordId = submissionResult?._id;
-const activityInstanceId = submissionResult?._activity_instance_id;
-
-      console.log("✅ Sent via Proxy:", submissionResult);
-
-      if (!recordId || !activityInstanceId) {
-        throw new Error("Missing record identifiers from submission response");
+      // ส่งหลายไฟล์เป็น files[] (รูปแบบที่พบบ่อยสุด)
+      for (const f of Array.from(files || [])) {
+        formData.append("files[]", f, f.name);
       }
 
-      if (fileInput.files.length > 0) {
-        await uploadAttachments(recordId, activityInstanceId, fileInput.files);
-      }
+      const url = `${WORKER_BASE}/upload?recordId=${encodeURIComponent(recordId)}&activityInstanceId=${encodeURIComponent(activityInstanceId)}`;
 
-      showThankYouMessage({
-        title: "✅ ขอบคุณที่กรอกข้อมูล",
-        message: "ระบบได้รับข้อมูลของคุณเรียบร้อยแล้ว ทีมงานจะติดต่อกลับโดยเร็วที่สุด",
-        isError: false,
-        lockForm: true
-      });
-    } catch (error) {
-      console.error("❌ Error:", error);
-      showThankYouMessage({
-        title: "❌ เกิดข้อผิดพลาด",
-        message: "ระบบไม่สามารถบันทึกข้อมูลได้ในขณะนี้ กรุณาตรวจสอบการเชื่อมต่อหรือลองใหม่อีกครั้ง ถ้าหากมีข้อความแจ้งเตือนใบงานสำเร็จรบกวนไม่ส่งข้อมูลซ้ำ",
-        isError: true,
-        lockForm: true
-      });
-      submitButton.disabled = false;
-    } finally {
-      isSubmitting = false;
-      spinner.style.display = "none";
-      if (!thankYou.classList.contains("error")) {
-        form.reset();
+      const resp = await fetch(url, { method: "POST", body: formData });
+      const text = await resp.text();
+
+      if (!resp.ok) throw new Error(`Attachment upload failed: ${resp.status} ${text.slice(0, 300)}`);
+      return text;
+    }
+
+    function showThankYouMessage({ title, message, isError, lockForm }) {
+      thankYouTitle.textContent = title;
+      thankYouBody.textContent = message;
+      thankYou.classList.toggle("error", Boolean(isError));
+      thankYou.style.display = "block";
+      if (lockForm) {
+        formSection.style.display = "none";
+      } else {
+        formSection.style.display = "block";
       }
     }
-  });
-
-const WORKER_BASE = "https://v45-kissflow-proxy.kissflow.workers.dev";
-
-async function uploadAttachments(recordId, activityInstanceId, files) {
-  const formData = new FormData();
-
-  // ส่งหลายไฟล์เป็น files[] (รูปแบบที่พบบ่อยสุด)
-  for (const f of Array.from(files || [])) {
-    formData.append("files[]", f, f.name);
-  }
-
-  const url = `${WORKER_BASE}/upload?recordId=${encodeURIComponent(recordId)}&activityInstanceId=${encodeURIComponent(activityInstanceId)}`;
-
-  const resp = await fetch(url, { method: "POST", body: formData });
-  const text = await resp.text();
-
-  if (!resp.ok) throw new Error(`Attachment upload failed: ${resp.status} ${text.slice(0, 300)}`);
-  return text;
-}
-
-  function showThankYouMessage({ title, message, isError, lockForm }) {
-    thankYouTitle.textContent = title;
-    thankYouBody.textContent = message;
-    thankYou.classList.toggle("error", Boolean(isError));
-    thankYou.style.display = "block";
-    if (lockForm) {
-      formSection.style.display = "none";
-    } else {
-      formSection.style.display = "block";
-    }
-  }
-</script>
+  </script>
 
 
 </body>
+
 </html>
