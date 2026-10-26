@@ -84,17 +84,47 @@
     input[type="text"],
     input[type="tel"],
     input[type="file"],
-    textarea {
+    textarea,
+    select {
       width: 100%;
       padding: 12px 14px;
       border: 1.5px solid #cfd8e3;
       border-radius: 8px;
       font-size: 15px;
+      font-family: inherit;
+      color: #333;
+      background-color: #fff;
+      box-sizing: border-box;
       transition: border-color 0.3s, box-shadow 0.3s;
     }
 
+    select {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      padding-right: 40px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23457b9d' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: calc(100% - 14px) center;
+      background-size: 16px;
+      cursor: pointer;
+    }
+
+    select:hover {
+      border-color: #457b9d;
+    }
+
+    select:invalid {
+      color: #888;
+    }
+
+    select option {
+      color: #333;
+    }
+
     input:focus,
-    textarea:focus {
+    textarea:focus,
+    select:focus {
       border-color: #457b9d;
       box-shadow: 0 0 0 3px rgba(69, 123, 157, 0.2);
       outline: none;
@@ -225,7 +255,8 @@
       input[type="text"],
       input[type="tel"],
       input[type="file"],
-      textarea {
+      textarea,
+      select {
         font-size: 14px;
       }
     }
@@ -254,6 +285,14 @@
 
         <label>ชื่อโครงการ *</label>
         <input type="text" id="projectName" placeholder="เช่น โครงการปรับปรุงระบบไฟฟ้า" required>
+
+        <label for="contractorType">ประเภทงาน *</label>
+        <select name="contractorType" id="contractorType" required>
+          <option value="" disabled selected hidden>เลือกประเภทงาน</option>
+          <option value="pre_con">งาน Pre-Construction</option>
+          <option value="main_add">งานหลัก/งานเพิ่ม</option>
+          <option value="pwa_pea">งานขอน้ำ-ไฟ</option>
+        </select>
 
         <label>ชื่อผู้ติดต่อ *</label>
         <input type="text" id="contactName" placeholder="ชื่อ-นามสกุล ผู้ติดต่อ" required>
@@ -309,6 +348,7 @@
       accessKey = "Ak986207c8-74d3-4363-ae8d-38d1c4aa2433";
       accessKeySecret = "5FwMwEfdoOKAvodGiBlTbSiwBxHUIZpAP2xJc69qi-2hU8tcphSYxa-8BsTM277ICOpcZzVr1M5paCdW6QmnQ";
     }
+
     async function displayAuthError(message) {
       authState.classList.add("error");
       authState.innerHTML = `${message} <div class="hint">โปรดลองปิดหน้าเว็บและเปิดขึ้นมาใหม่ หรือเข้าผ่านแอป LINE โดยตรง</div>`;
@@ -362,7 +402,6 @@
     window.addEventListener("load", () => {
       main();
     });
-
 
     function buildProxyUrl(endpoint) {
       // cache buster กัน proxy ตอบซ้ำ
@@ -457,6 +496,7 @@
       const contractorName = document.getElementById("company").value;
       const contactName = document.getElementById("contactName").value;
       const projectName = document.getElementById("projectName").value;
+      const contractorType = document.getElementById("contractorType").value;
       const contractNo = document.getElementById("contactPhone").value;
       const lineId = document.getElementById("lineId").value;
       const reason = document.getElementById("reason").value;
@@ -467,6 +507,7 @@
         Line_ID: lineId,
         UserID: userId,
         Project_Name: projectName,
+        Contractor_Type: contractorType,
         Reason: reason,
         // Additional_Attachment: attachments
       });
@@ -487,6 +528,7 @@
           Line_ID: lineId,
           UserID: userId,
           Project_Name: projectName,
+          Contractor_Type: contractorType,
           Reason: reason
         });
 
