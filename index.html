@@ -445,29 +445,6 @@
 
       return safeJson(response);
     }
-
-    async function getJsonViaProxy(endpoint, headersExtra = {}) {
-      const proxyUrl = buildProxyUrl(endpoint);
-
-      const response = await fetch(proxyUrl, {
-        method: "GET",
-        headers: {
-          "Accept": "application/json",
-          "X-Access-Key-Id": accessKey,
-          "X-Access-Key-Secret": accessKeySecret,
-          "X-Requested-With": "XMLHttpRequest",
-          ...headersExtra
-        },
-        cache: "no-store"
-      });
-
-      if (!response.ok) {
-        const errText = await response.text().catch(() => "");
-        throw new Error(`Request GET failed: ${response.status} ${response.statusText}. bodyPreview=${errText.slice(0, 300)}`);
-      }
-
-      return safeJson(response);
-    }
     function buildProxyUrl(endpoint) {
       const bust = `_=${Date.now()}_${Math.random().toString(16).slice(2)}`;
       return `https://corsproxy.io/?${encodeURIComponent(endpoint + (endpoint.includes("?") ? "&" : "?") + bust)}`;
@@ -559,35 +536,13 @@
         console.log("✅ Sent via Proxy:", submissionResult);
 
         const recordId = submissionResult?._id;
-        const processId = submissionResult?._model_id || submissionResult?._flow_id || submissionResult?._process_id || "Contractor_Task_Revision_A00";
-        const oldStepId = submissionResult?._activity_instance_id;
+        const activityInstanceId = submissionResult?._activity_instance_id;
 
-        console.log("✅ Sent via Proxy. Record ID:", recordId, "Initial/Draft Step ID:", oldStepId);
+        console.log("✅ Sent via Proxy:", submissionResult);
 
-        if (!recordId) {
-          throw new Error("Missing recordId from submission response");
+        if (!recordId || !activityInstanceId) {
+          throw new Error("Missing record identifiers from submission response");
         }
-
-        // ========================================================
-        // หน่วงเวลา 5 วินาที แล้ว GET ข้อมูลใบงานเพื่อเอาฟิลด์ Activity_Instance_Id
-        // ========================================================
-        updateSubmitStatus("กำลังรอระบบเตรียมข้อมูล (5 วินาที)...");
-        console.log("⏳ หน่วงเวลา 5 วินาทีก่อนดึงข้อมูลใบงาน...");
-        await new Promise(r => setTimeout(r, 5000));
-
-        updateSubmitStatus("กำลังดึงข้อมูลใบงาน...");
-        const ticket = await getUpdateData(domain, accountID, accessKey, processId, recordId);
-        console.log("📄 ข้อมูลทั้งใบงานที่ได้ (Full Ticket):", ticket);
-
-        const activityInstanceId = extractActiveActivityInstanceId(ticket);
-        console.log("🎯 ค่าจากฟิลด์ Activity_Instance_Id ที่จะนำไปใช้งาน:", activityInstanceId);
-
-        if (!activityInstanceId) {
-          console.error("❌ ไม่พบค่าในฟิลด์ Activity_Instance_Id ในใบงาน:", ticket);
-          throw new Error("ไม่พบค่าในฟิลด์ Activity_Instance_Id จากใบงาน");
-        }
-
-        updateSubmitStatus("กำลังอัปโหลดเอกสารแนบ...");
 
         if (fileInput.files.length > 0) {
           await uploadAttachments(recordId, activityInstanceId, fileInput.files);
@@ -600,95 +555,22 @@
           lockForm: true
         });
       } catch (error) {
-          console.error("❌ Error:", error);
-          showThankYouMessage({
-            title: "❌ เกิดข้อผิดพลาด",
-            message: "ระบบไม่สามารถบันทึกข้อมูลได้ในขณะนี้ กรุณาตรวจสอบการเชื่อมต่อหรือลองใหม่อีกครั้ง ถ้าหากมีข้อความแจ้งเตือนใบงานสำเร็จรบกวนไม่ส่งข้อมูลซ้ำ",
-            isError: true,
-            lockForm: true
-          });
-          submitButton.disabled = false;
-        } finally {
-          isSubmitting = false;
-          spinner.style.display = "none";
-          updateSubmitStatus("");
-          if (!thankYou.classList.contains("error")) {
-            form.reset();
-          }
-        }
-      });
-
-    function updateSubmitStatus(text) {
-      let statusEl = document.getElementById("submitStatus");
-      if (!statusEl) {
-        statusEl = document.createElement("div");
-        statusEl.id = "submitStatus";
-        statusEl.style.cssText = "font-size: 14px; color: #1d3557; margin-top: 10px; text-align: center; font-weight: 500;";
-        spinner.parentNode.insertBefore(statusEl, spinner.nextSibling);
-      }
-      statusEl.textContent = text;
-    }
-
-    function extractActiveActivityInstanceId(ticket) {
-      if (!ticket || typeof ticket !== "object") return null;
-
-      // 1. ดึงค่าตรงจากฟิลด์ "Activity_Instance_Id" ตามที่ระบุ
-      let val =
-        ticket.Activity_Instance_Id ??
-        ticket["Activity_Instance_Id"] ??
-        ticket.activity_instance_id ??
-        ticket.Data?.Activity_Instance_Id ??
-        ticket.Data?.["Activity_Instance_Id"] ??
-        ticket.Data?.activity_instance_id;
-
-      // 2. สำรอง: ดึงจาก _current_context (ตาม Branch ที่ระบบแยกไป)
-      if (!val && Array.isArray(ticket._current_context) && ticket._current_context.length > 0) {
-        val = ticket._current_context[0]?._context_activity_instance_id;
-      }
-
-      // 3. สำรอง: หากฟิลด์ Custom ยังไม่มีค่า ให้ดึงจาก CurrentActivityInstance ของ Kissflow
-      if (!val) {
-        val = ticket.CurrentActivityInstance || ticket.current_activity_instance;
-      }
-
-      // หากค่าที่ได้เป็น object (เช่น { value: "..." } หรือ { _id: "..." })
-      if (val && typeof val === "object") {
-        val = val._id || val.id || val.value || null;
-      }
-
-      if (val && typeof val === "string" && val.trim() !== "") {
-        return val.trim();
-      }
-
-      return null;
-    }
-
-    async function getUpdateData(domain, accountID, accessKey, processID, instanceID) {
-      try {
-        const url = `https://${domain}/process/2/${accountID}/admin/${processID}/${instanceID}`;
-        console.log("🔍 กำลังดึงข้อมูลใบงานจาก Kissflow:", url);
-
-        const response = await fetch(url, {
-          method: "GET",
-          headers: {
-            "Accept": "application/json",
-            "X-Access-Key-Id": accessKey,
-            "X-Access-Key-Secret": accessKeySecret
-          }
+        console.error("❌ Error:", error);
+        showThankYouMessage({
+          title: "❌ เกิดข้อผิดพลาด",
+          message: "ระบบไม่สามารถบันทึกข้อมูลได้ในขณะนี้ กรุณาตรวจสอบการเชื่อมต่อหรือลองใหม่อีกครั้ง ถ้าหากมีข้อความแจ้งเตือนใบงานสำเร็จรบกวนไม่ส่งข้อมูลซ้ำ",
+          isError: true,
+          lockForm: true
         });
-
-        if (!response.ok) {
-          const text = await response.text().catch(() => "");
-          throw new Error(`getUpdateData failed (${response.status}): ${text.slice(0, 200)}`);
+        submitButton.disabled = false;
+      } finally {
+        isSubmitting = false;
+        spinner.style.display = "none";
+        if (!thankYou.classList.contains("error")) {
+          form.reset();
         }
-
-        const jsonData = await response.json();
-        return jsonData;
-      } catch (error) {
-        console.error("❌ getUpdateData error:", error);
-        throw error;
       }
-    }
+    });
 
     const WORKER_BASE = "https://v45-kissflow-proxy.kissflow.workers.dev";
 
