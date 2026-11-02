@@ -342,11 +342,13 @@
     let domain = "development-v45group.kissflow.com";
     let accessKey = "Ak398fdc64-143d-48b5-8237-0f6403b4f6a6";
     let accessKeySecret = "rRGLEzJ0SFbbYC7jsSLsA84H1xCFZvTYS8PDUD2x1OcsTP4LEgP9-9ZHaiVdloVVmSvlM69nMdTVAY3eVPauPQ";
+    let processID = "Contractor_Task_Revision_Page_My_T_A00"; 
 
     if (accountID == "AcBm1i3NlfFk") {
       domain = "v45group.kissflow.com";
       accessKey = "Ak986207c8-74d3-4363-ae8d-38d1c4aa2433";
       accessKeySecret = "5FwMwEfdoOKAvodGiBlTbSiwBxHUIZpAP2xJc69qi-2hU8tcphSYxa-8BsTM277ICOpcZzVr1M5paCdW6QmnQ";
+      processID = "Contractor_Task_Revision_Page_My_T_A00";
     }
 
     async function displayAuthError(message) {
@@ -445,18 +447,97 @@
 
       return safeJson(response);
     }
-    function buildProxyUrl(endpoint) {
-      const bust = `_=${Date.now()}_${Math.random().toString(16).slice(2)}`;
-      return `https://corsproxy.io/?${encodeURIComponent(endpoint + (endpoint.includes("?") ? "&" : "?") + bust)}`;
+    function getSecret(key) {
+      return accessKeySecret;
     }
 
-    async function safeJson(response) {
-      const text = await response.text();
+    function searchStep(processSteps, result = []) {
+      if (!Array.isArray(processSteps)) return result;
+      for (const step of processSteps) {
+        if (step && step["_status"] === "InProgress") {
+          if (step["NodeType"] === "UserTask") {
+            result.push([{
+              "Name": step["Name"],
+              "ActivityId": step["_activity_instance_id"]
+            }]);
+          } else if (step["NodeType"] === "Parallel" && step["Process"]) {
+            result.push(searchStep(step["Process"], []));
+          }
+        }
+      }
+      return result;
+    }
+
+    async function getActivityIds(domain, accountID, processID, instanceID, accessKey, retries = 3) {
       try {
-        return JSON.parse(text);
-      } catch {
-        const preview = text?.slice(0, 300);
-        throw new Error(`Response is not JSON. status=${response.status} ${response.statusText}. bodyPreview=${preview}`);
+        const getProgressURL = "https://" + domain + "/process/2/" + accountID + "/" + processID + "/" + instanceID + "/progress";
+        const options = {
+          method: "GET",
+          headers: {
+            "Accept": "application/json",
+            "X-Access-Key-Id": accessKey,
+            "X-Access-Key-Secret": getSecret(accessKey)
+          }
+        };
+
+        let respProgress;
+        try {
+          const proxyUrl = buildProxyUrl(getProgressURL);
+          const response = await fetch(proxyUrl, {
+            ...options,
+            cache: "no-store"
+          });
+          if (!response.ok) {
+            throw new Error(`Proxy request failed: ${response.status} ${response.statusText}`);
+          }
+          respProgress = await safeJson(response);
+        } catch (proxyErr) {
+          console.warn("Proxy fetch failed, attempting direct fetch:", proxyErr);
+          const response = await fetch(getProgressURL, {
+            ...options,
+            cache: "no-store"
+          });
+          if (!response.ok) {
+            const errText = await response.text().catch(() => "");
+            throw new Error(`Direct fetch failed: ${response.status} ${response.statusText}. ${errText.slice(0, 200)}`);
+          }
+          respProgress = await safeJson(response);
+        }
+
+        if (typeof respProgress === "string") {
+          respProgress = JSON.parse(respProgress);
+        }
+
+        console.log("Activity Ids ", respProgress);
+
+        const allSteps = respProgress["Steps"] || [];
+        const currentStep = allSteps.filter(step => step["_status"] == "InProgress");
+
+        let activityId = [];
+        for (const step of currentStep) {
+          if (step["NodeType"] == "UserTask") {
+            activityId.push([{
+              "Name": step["Name"],
+              "ActivityId": step["_activity_instance_id"]
+            }]);
+          } else if (step["NodeType"] == "Parallel") {
+            activityId.push(searchStep(step["Process"], []));
+          }
+        }
+
+        activityId = activityId.filter(step => Array.isArray(step) ? step.length > 0 : Boolean(step));
+
+        // หากขั้นตอน InProgress ยังไม่พร้อมในทันที ให้หน่วงเวลาแล้วลองใหม่
+        if (activityId.length === 0 && retries > 0) {
+          console.log(`ActivityId ยังไม่พร้อม กำลังลองใหม่... (เหลืออีก ${retries} ครั้ง)`);
+          await new Promise(r => setTimeout(r, 1000));
+          return await getActivityIds(domain, accountID, processID, instanceID, accessKey, retries - 1);
+        }
+
+        return activityId;
+      } catch (err) {
+        console.error("❌ Error in getActivityIds:", err);
+        throw err;
       }
     }
 
@@ -536,9 +617,24 @@
         console.log("✅ Sent via Proxy:", submissionResult);
 
         const recordId = submissionResult?._id;
-        const activityInstanceId = submissionResult?._activity_instance_id;
+        let activityInstanceId = submissionResult?._activity_instance_id;
 
-        console.log("✅ Sent via Proxy:", submissionResult);
+        if (!activityInstanceId && recordId) {
+          const currentProcessId = submissionResult?._process_id || submissionResult?.process_id || processID;
+          if (!currentProcessId) {
+            throw new Error("Missing processID: ไม่พบ processID ในการตอบกลับ กรุณาระบุ processID ในตัวแปรการตั้งค่า");
+          }
+          console.log("🔄 กำลังดึง ActivityInstanceId จาก Kissflow...", { currentProcessId, recordId });
+          const activityIdList = await getActivityIds(domain, accountID, currentProcessId, recordId, accessKey);
+          console.log("Activity Ids ที่ได้:", activityIdList);
+
+          const flatList = activityIdList.flat(Infinity).filter(Boolean);
+          if (flatList.length > 0) {
+            activityInstanceId = flatList[0]?.ActivityId || flatList[0]?._activity_instance_id;
+          }
+        }
+
+        console.log("ActivityInstanceId ที่พร้อมใช้งาน:", activityInstanceId);
 
         if (!recordId || !activityInstanceId) {
           throw new Error("Missing record identifiers from submission response");
