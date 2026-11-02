@@ -641,7 +641,12 @@
         ticket.Data?.["Activity_Instance_Id"] ??
         ticket.Data?.activity_instance_id;
 
-      // 2. สำรอง: หากฟิลด์ Custom ยังไม่มีค่า ให้ดึงจาก CurrentActivityInstance ของ Kissflow
+      // 2. สำรอง: ดึงจาก _current_context (ตาม Branch ที่ระบบแยกไป)
+      if (!val && Array.isArray(ticket._current_context) && ticket._current_context.length > 0) {
+        val = ticket._current_context[0]?._context_activity_instance_id;
+      }
+
+      // 3. สำรอง: หากฟิลด์ Custom ยังไม่มีค่า ให้ดึงจาก CurrentActivityInstance ของ Kissflow
       if (!val) {
         val = ticket.CurrentActivityInstance || ticket.current_activity_instance;
       }
@@ -658,16 +663,33 @@
       return null;
     }
 
-    async function fetchProcessItem(recordId, processId) {
+    async function fetchProcessItem(recordId, processId, maxRetries = 3) {
       const pId = processId || "Contractor_Task_Revision_A00";
       const workerUrl = `${WORKER_BASE}/item?recordId=${encodeURIComponent(recordId)}&processId=${encodeURIComponent(pId)}`;
       
-      const resp = await fetch(workerUrl);
-      if (!resp.ok) {
-        const errText = await resp.text().catch(() => "");
-        throw new Error(`Worker GET /item failed (${resp.status}): ${errText.slice(0, 200)}`);
+      let lastError = null;
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          if (attempt > 1) {
+            updateSubmitStatus(`กำลังดึงข้อมูลใบงานอีกครั้ง (รอบที่ ${attempt}/${maxRetries})...`);
+            await new Promise(r => setTimeout(r, 2000));
+          }
+          const resp = await fetch(workerUrl);
+          if (resp.ok) {
+            return await resp.json();
+          }
+          const errText = await resp.text().catch(() => "");
+          lastError = new Error(`Worker GET /item failed (${resp.status}): ${errText.slice(0, 200)}`);
+          // หากเป็น 404 ให้ลองใหม่ตามรอบ
+          if (resp.status !== 404) {
+            throw lastError;
+          }
+        } catch (err) {
+          lastError = err;
+          if (attempt === maxRetries) throw err;
+        }
       }
-      return await resp.json();
+      throw lastError;
     }
 
     const WORKER_BASE = "https://v45-kissflow-proxy.kissflow.workers.dev";
