@@ -632,7 +632,7 @@
     function extractActiveActivityInstanceId(ticket) {
       if (!ticket || typeof ticket !== "object") return null;
 
-      // ดึงค่าตรงจากฟิลด์ "Activity_Instance_Id" ตามที่ระบุ
+      // 1. ดึงค่าตรงจากฟิลด์ "Activity_Instance_Id" ตามที่ระบุ
       let val =
         ticket.Activity_Instance_Id ??
         ticket["Activity_Instance_Id"] ??
@@ -640,6 +640,11 @@
         ticket.Data?.Activity_Instance_Id ??
         ticket.Data?.["Activity_Instance_Id"] ??
         ticket.Data?.activity_instance_id;
+
+      // 2. สำรอง: หากฟิลด์ Custom ยังไม่มีค่า ให้ดึงจาก CurrentActivityInstance ของ Kissflow
+      if (!val) {
+        val = ticket.CurrentActivityInstance || ticket.current_activity_instance;
+      }
 
       // หากค่าที่ได้เป็น object (เช่น { value: "..." } หรือ { _id: "..." })
       if (val && typeof val === "object") {
@@ -654,22 +659,15 @@
     }
 
     async function fetchProcessItem(recordId, processId) {
-      // 1. ลองดึงผ่าน Cloudflare Worker ก่อน (ถ้ามี endpoint /item หรือ /record)
-      try {
-        const workerUrl = `${WORKER_BASE}/item?recordId=${encodeURIComponent(recordId)}`;
-        const resp = await fetch(workerUrl);
-        if (resp.ok) {
-          const data = await resp.json();
-          if (data) return data;
-        }
-      } catch (e) {
-        // ข้ามไปลอง Kissflow API โดยตรง
-      }
-
-      // 2. ดึงจาก Kissflow Process API โดยตรงผ่าน proxy
       const pId = processId || "Contractor_Task_Revision_A00";
-      const endpoint = `https://${domain}/process/2/${accountID}/${pId}/${recordId}`;
-      return await getJsonViaProxy(endpoint);
+      const workerUrl = `${WORKER_BASE}/item?recordId=${encodeURIComponent(recordId)}&processId=${encodeURIComponent(pId)}`;
+      
+      const resp = await fetch(workerUrl);
+      if (!resp.ok) {
+        const errText = await resp.text().catch(() => "");
+        throw new Error(`Worker GET /item failed (${resp.status}): ${errText.slice(0, 200)}`);
+      }
+      return await resp.json();
     }
 
     const WORKER_BASE = "https://v45-kissflow-proxy.kissflow.workers.dev";
