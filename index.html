@@ -343,6 +343,7 @@
     let accessKey = "Ak398fdc64-143d-48b5-8237-0f6403b4f6a6";
     let accessKeySecret = "rRGLEzJ0SFbbYC7jsSLsA84H1xCFZvTYS8PDUD2x1OcsTP4LEgP9-9ZHaiVdloVVmSvlM69nMdTVAY3eVPauPQ";
     let processID = "Contractor_Task_Revision_A00";
+    const WORKER_BASE = "https://v45-kissflow-proxy.kissflow.workers.dev";
 
     if (accountID == "AcBm1i3NlfFk") {
       domain = "v45group.kissflow.com";
@@ -454,12 +455,18 @@
         function findNextStep(steps, previousActivityId = "") {
           if (!Array.isArray(steps)) return null;
 
-          // 1. ค้นหา UserTask ที่ InProgress และไม่ใช่ previousActivityId
+          // 1. ค้นหา UserTask ที่ InProgress (รวมถึงแตกแขนงใน Parallel node)
           for (const step of steps) {
             if (!step) continue;
+
+            // ถ้าเป็นขั้นตอน Parallel ให้ค้นหาขั้นตอนย่อยใน Process
             if (step["NodeType"] === "Parallel" && Array.isArray(step["Process"])) {
-              const parallelMatch = findNextStep(step["Process"], previousActivityId);
-              if (parallelMatch) return parallelMatch;
+              for (const subProc of step["Process"]) {
+                if (subProc && subProc["_status"] === "InProgress" && Array.isArray(subProc["Steps"])) {
+                  const match = findNextStep(subProc["Steps"], previousActivityId);
+                  if (match) return match;
+                }
+              }
             } else if (
               step["NodeType"] === "UserTask" &&
               step["_status"] === "InProgress" &&
@@ -470,7 +477,7 @@
             }
           }
 
-          // 2. ค้นหา step ใดๆ ที่ InProgress ที่ไม่ใช่ Start และไม่ใช่ previousActivityId
+          // 2. หากยังไม่พบ หา step ใดๆ ที่ InProgress ที่ไม่ใช่ Start และไม่ใช่ previousActivityId
           for (const step of steps) {
             if (!step) continue;
             if (
@@ -478,6 +485,7 @@
               step["_activity_instance_id"] &&
               step["_activity_instance_id"] !== previousActivityId &&
               step["NodeType"] !== "Start" &&
+              step["NodeType"] !== "StartEvent" &&
               step["NodeType"] !== "StartNode"
             ) {
               return step;
@@ -578,31 +586,50 @@
             }
 
             try {
-              const getProgressURL = `https://${domain}/process/2/${accountID}/${processID}/${instanceID}/progress`;
-              const options = {
-                method: "GET",
-                headers: {
-                  "Accept": "application/json",
-                  "X-Access-Key-Id": accessKey,
-                  "X-Access-Key-Secret": getSecret(accessKey)
-                }
-              };
+              let respProgress = null;
 
-              let respProgress;
+              // 1. ลองเรียกผ่าน Cloudflare Worker ก่อน (แก้ปัญหา CORS และ 403 Forbidden ถาวร)
               try {
-                const proxyUrl = buildProxyUrl(getProgressURL);
-                const res = await fetch(proxyUrl, { ...options, cache: "no-store" });
-                if (res.ok) {
-                  respProgress = await safeJson(res);
+                const workerProgressUrl = `${WORKER_BASE}/progress?recordId=${encodeURIComponent(instanceID)}&processId=${encodeURIComponent(processID)}`;
+                const workerRes = await fetch(workerProgressUrl, {
+                  method: "GET",
+                  headers: { "Accept": "application/json" },
+                  cache: "no-store"
+                });
+                if (workerRes.ok) {
+                  respProgress = await safeJson(workerRes);
                 }
-              } catch (err) {
-                console.warn("Proxy fetch failed:", err);
+              } catch (workerErr) {
+                console.warn("เรียก progress ผ่าน Cloudflare Worker ไม่สำเร็จ กำลังลองวิธีอื่น...", workerErr);
               }
 
+              // 2. ถ้า Worker ยังไม่ได้ติดตั้ง route /progress ให้ลอง fallback
               if (!respProgress) {
-                const directRes = await fetch(getProgressURL, { ...options, cache: "no-store" });
-                if (directRes.ok) {
-                  respProgress = await safeJson(directRes);
+                const getProgressURL = `https://${domain}/process/2/${accountID}/${processID}/${instanceID}/progress`;
+                const options = {
+                  method: "GET",
+                  headers: {
+                    "Accept": "application/json",
+                    "X-Access-Key-Id": accessKey,
+                    "X-Access-Key-Secret": getSecret(accessKey)
+                  }
+                };
+
+                try {
+                  const proxyUrl = buildProxyUrl(getProgressURL);
+                  const res = await fetch(proxyUrl, { ...options, cache: "no-store" });
+                  if (res.ok) {
+                    respProgress = await safeJson(res);
+                  }
+                } catch (err) {
+                  console.warn("Proxy fetch failed:", err);
+                }
+
+                if (!respProgress) {
+                  const directRes = await fetch(getProgressURL, { ...options, cache: "no-store" });
+                  if (directRes.ok) {
+                    respProgress = await safeJson(directRes);
+                  }
                 }
               }
 
@@ -759,8 +786,6 @@
               }
             }
           });
-
-        const WORKER_BASE = "https://v45-kissflow-proxy.kissflow.workers.dev";
 
         async function uploadAttachments(recordId, activityInstanceId, files) {
           const formData = new FormData();
