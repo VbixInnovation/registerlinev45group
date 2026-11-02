@@ -342,13 +342,13 @@
     let domain = "development-v45group.kissflow.com";
     let accessKey = "Ak398fdc64-143d-48b5-8237-0f6403b4f6a6";
     let accessKeySecret = "rRGLEzJ0SFbbYC7jsSLsA84H1xCFZvTYS8PDUD2x1OcsTP4LEgP9-9ZHaiVdloVVmSvlM69nMdTVAY3eVPauPQ";
-    let processID = "Contractor_Task_Revision_Page_My_T_A00"; 
+    let processID = "Contractor_Task_Revision_A00";
 
     if (accountID == "AcBm1i3NlfFk") {
       domain = "v45group.kissflow.com";
       accessKey = "Ak986207c8-74d3-4363-ae8d-38d1c4aa2433";
       accessKeySecret = "5FwMwEfdoOKAvodGiBlTbSiwBxHUIZpAP2xJc69qi-2hU8tcphSYxa-8BsTM277ICOpcZzVr1M5paCdW6QmnQ";
-      processID = "Contractor_Task_Revision_Page_My_T_A00";
+      processID = "Contractor_Task_Revision_A00";
     }
 
     async function displayAuthError(message) {
@@ -447,257 +447,349 @@
 
       return safeJson(response);
     }
-    function getSecret(key) {
-      return accessKeySecret;
-    }
+      function getSecret(key) {
+        return accessKeySecret;
+      }
 
-    function searchStep(processSteps, result = []) {
-      if (!Array.isArray(processSteps)) return result;
-      for (const step of processSteps) {
-        if (step && step["_status"] === "InProgress") {
-          if (step["NodeType"] === "UserTask") {
-            result.push([{
-              "Name": step["Name"],
-              "ActivityId": step["_activity_instance_id"]
-            }]);
-          } else if (step["NodeType"] === "Parallel" && step["Process"]) {
-            result.push(searchStep(step["Process"], []));
+        function findNextStep(steps, previousActivityId = "") {
+          if (!Array.isArray(steps)) return null;
+
+          // 1. ค้นหา UserTask ที่ InProgress และไม่ใช่ previousActivityId
+          for (const step of steps) {
+            if (!step) continue;
+            if (step["NodeType"] === "Parallel" && Array.isArray(step["Process"])) {
+              const parallelMatch = findNextStep(step["Process"], previousActivityId);
+              if (parallelMatch) return parallelMatch;
+            } else if (
+              step["NodeType"] === "UserTask" &&
+              step["_status"] === "InProgress" &&
+              step["_activity_instance_id"] &&
+              step["_activity_instance_id"] !== previousActivityId
+            ) {
+              return step;
+            }
+          }
+
+          // 2. ค้นหา step ใดๆ ที่ InProgress ที่ไม่ใช่ Start และไม่ใช่ previousActivityId
+          for (const step of steps) {
+            if (!step) continue;
+            if (
+              step["_status"] === "InProgress" &&
+              step["_activity_instance_id"] &&
+              step["_activity_instance_id"] !== previousActivityId &&
+              step["NodeType"] !== "Start" &&
+              step["NodeType"] !== "StartNode"
+            ) {
+              return step;
+            }
+          }
+
+          // 3. ค้นหา step ที่อยู่ถัดจาก completed step ล่าสุด
+          let lastCompletedIdx = -1;
+          for (let i = 0; i < steps.length; i++) {
+            if (steps[i] && steps[i]["_status"] === "Completed") {
+              lastCompletedIdx = i;
+            }
+          }
+          if (lastCompletedIdx !== -1 && lastCompletedIdx + 1 < steps.length) {
+            const nextCandidate = steps[lastCompletedIdx + 1];
+            if (nextCandidate && nextCandidate["_activity_instance_id"] && nextCandidate["_activity_instance_id"] !== previousActivityId) {
+              return nextCandidate;
+            }
+          }
+
+          // 4. กรณีไม่มี previousActivityId ส่งมาเลย ให้เลือก InProgress ตัวแรกที่มี activity_id
+          if (!previousActivityId) {
+            const anyInProgress = steps.find(s => s && s["_status"] === "InProgress" && s["_activity_instance_id"]);
+            if (anyInProgress) return anyInProgress;
+          }
+
+          return null;
+        }
+
+        async function getActivityIds(domain, accountID, processID, instanceID, accessKey) {
+          try {
+            const getProgressURL = "https://" + domain + "/process/2/" + accountID + "/" + processID + "/" + instanceID + "/progress";
+            const options = {
+              method: "GET",
+              headers: {
+                "Accept": "application/json",
+                "X-Access-Key-Id": accessKey,
+                "X-Access-Key-Secret": getSecret(accessKey)
+              }
+            };
+
+            let respProgress;
+            try {
+              const proxyUrl = buildProxyUrl(getProgressURL);
+              const response = await fetch(proxyUrl, { ...options, cache: "no-store" });
+              if (response.ok) {
+                respProgress = await safeJson(response);
+              }
+            } catch (e) {
+              console.warn("Proxy fetch failed:", e);
+            }
+
+            if (!respProgress) {
+              const directRes = await fetch(getProgressURL, { ...options, cache: "no-store" });
+              if (!directRes.ok) {
+                const errText = await directRes.text().catch(() => "");
+                throw new Error(`Fetch progress failed: ${directRes.status} ${directRes.statusText}. ${errText.slice(0, 200)}`);
+              }
+              respProgress = await safeJson(directRes);
+            }
+
+            if (typeof respProgress === "string") respProgress = JSON.parse(respProgress);
+            console.log("Activity Ids ", respProgress);
+
+            const allSteps = respProgress["Steps"] || [];
+            const currentStep = allSteps.filter(step => step["_status"] == "InProgress");
+            const activityId = [];
+
+            for (const step of currentStep) {
+              if (step["NodeType"] == "UserTask") {
+                activityId.push([{
+                  "Name": step["Name"],
+                  "ActivityId": step["_activity_instance_id"]
+                }]);
+              } else if (step["NodeType"] == "Parallel" && Array.isArray(step["Process"])) {
+                const nested = findNextStep(step["Process"], "");
+                if (nested) {
+                  activityId.push([{ "Name": nested["Name"], "ActivityId": nested["_activity_instance_id"] }]);
+                }
+              }
+            }
+
+            return activityId.filter(step => Array.isArray(step) ? step.length > 0 : Boolean(step));
+          } catch (err) {
+            throw err;
           }
         }
-      }
-      return result;
-    }
 
-    async function getActivityIds(domain, accountID, processID, instanceID, accessKey, retries = 3) {
-      try {
-        const getProgressURL = "https://" + domain + "/process/2/" + accountID + "/" + processID + "/" + instanceID + "/progress";
-        const options = {
-          method: "GET",
-          headers: {
-            "Accept": "application/json",
-            "X-Access-Key-Id": accessKey,
-            "X-Access-Key-Secret": getSecret(accessKey)
+        async function getNextStepActivityId(domain, accountID, processID, instanceID, accessKey, previousActivityId = "", maxRetries = 5) {
+          for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            console.log(`🔄 กำลังค้นหา ActivityInstanceId ของ step ถัดไป (รอบที่ ${attempt}/${maxRetries})...`);
+
+            // หน่วงเวลาเพื่อให้ workflow ของ Kissflow เปลี่ยนสถานะเป็น step ถัดไป
+            if (attempt > 1) {
+              await new Promise(r => setTimeout(r, 1200));
+            } else {
+              await new Promise(r => setTimeout(r, 800));
+            }
+
+            try {
+              const getProgressURL = `https://${domain}/process/2/${accountID}/${processID}/${instanceID}/progress`;
+              const options = {
+                method: "GET",
+                headers: {
+                  "Accept": "application/json",
+                  "X-Access-Key-Id": accessKey,
+                  "X-Access-Key-Secret": getSecret(accessKey)
+                }
+              };
+
+              let respProgress;
+              try {
+                const proxyUrl = buildProxyUrl(getProgressURL);
+                const res = await fetch(proxyUrl, { ...options, cache: "no-store" });
+                if (res.ok) {
+                  respProgress = await safeJson(res);
+                }
+              } catch (err) {
+                console.warn("Proxy fetch failed:", err);
+              }
+
+              if (!respProgress) {
+                const directRes = await fetch(getProgressURL, { ...options, cache: "no-store" });
+                if (directRes.ok) {
+                  respProgress = await safeJson(directRes);
+                }
+              }
+
+              if (typeof respProgress === "string") {
+                respProgress = JSON.parse(respProgress);
+              }
+
+              if (respProgress && respProgress["Steps"]) {
+                const allSteps = respProgress["Steps"];
+                console.log("📋 รายการ Steps ทั้งหมดใน Kissflow:", allSteps.map((s, idx) => ({
+                  idx,
+                  name: s.Name,
+                  nodeType: s.NodeType,
+                  status: s._status,
+                  activityId: s._activity_instance_id
+                })));
+
+                const nextStep = findNextStep(allSteps, previousActivityId);
+                if (nextStep && nextStep["_activity_instance_id"]) {
+                  console.log("🎯 พบ ActivityInstanceId ของ step ถัดไปเรียบร้อย:", nextStep["Name"], nextStep["_activity_instance_id"]);
+                  return nextStep["_activity_instance_id"];
+                }
+              }
+            } catch (fetchErr) {
+              console.error(`❌ ข้อผิดพลาดในการเรียกดู progress (รอบที่ ${attempt}):`, fetchErr);
+            }
           }
-        };
 
-        let respProgress;
-        try {
-          const proxyUrl = buildProxyUrl(getProgressURL);
-          const response = await fetch(proxyUrl, {
-            ...options,
-            cache: "no-store"
+          throw new Error("ไม่สามารถค้นหา ActivityInstanceId ของ step ถัดไปได้ กรุณาตรวจสอบการตั้งค่า Process ใน Kissflow");
+        }
+
+        const WORKER_SUBMIT_URL = "https://v45-kissflow-proxy.kissflow.workers.dev/submit";
+
+        async function postJson(payloadObj) {
+          const response = await fetch(WORKER_SUBMIT_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Accept": "application/json" },
+            body: JSON.stringify(payloadObj),
           });
-          if (!response.ok) {
-            throw new Error(`Proxy request failed: ${response.status} ${response.statusText}`);
+          const text = await response.text();
+          if (!response.ok) throw new Error(`Submit failed: ${response.status} ${text.slice(0, 200)}`);
+          return JSON.parse(text);
+        }
+
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          if (isSubmitting) return;
+          isSubmitting = true;
+          spinner.style.display = "block";
+          thankYou.style.display = "none";
+          thankYou.classList.remove("error");
+
+
+          if (!userId) {
+            spinner.style.display = "none";
+            showThankYouMessage({
+              title: "⚠️ ไม่พบรหัสผู้ใช้",
+              message: "กรุณาเปิดแบบฟอร์มจากแอป LINE อีกครั้งเพื่อยืนยันตัวตนของคุณ",
+              isError: true,
+              lockForm: true
+            });
+            return;
           }
-          respProgress = await safeJson(response);
-        } catch (proxyErr) {
-          console.warn("Proxy fetch failed, attempting direct fetch:", proxyErr);
-          const response = await fetch(getProgressURL, {
-            ...options,
-            cache: "no-store"
+
+          const contractorName = document.getElementById("company").value;
+          const contactName = document.getElementById("contactName").value;
+          const projectName = document.getElementById("projectName").value;
+          const contractorType = document.getElementById("contractorType").value;
+          const contractNo = document.getElementById("contactPhone").value;
+          const lineId = document.getElementById("lineId").value;
+          const reason = document.getElementById("reason").value;
+          const payload = JSON.stringify({
+            Contractor_Name: contractorName,
+            Technician_Name: contactName,
+            Contract_No: contractNo,
+            Line_ID: lineId,
+            UserID: userId,
+            Project_Name: projectName,
+            Contractor_Type: contractorType,
+            Reason: reason,
+            // Additional_Attachment: attachments
           });
-          if (!response.ok) {
-            const errText = await response.text().catch(() => "");
-            throw new Error(`Direct fetch failed: ${response.status} ${response.statusText}. ${errText.slice(0, 200)}`);
+
+          if (fileInput.files.length === 0) {
+            spinner.style.display = "none";
+            fileInput.reportValidity();
+            return;
           }
-          respProgress = await safeJson(response);
-        }
 
-        if (typeof respProgress === "string") {
-          respProgress = JSON.parse(respProgress);
-        }
+          submitButton.disabled = true;
 
-        console.log("Activity Ids ", respProgress);
+          try {
+            const submissionResult = await postJson({
+              Contractor_Name: contractorName,
+              Technician_Name: contactName,
+              Contract_No: contractNo,
+              Line_ID: lineId,
+              UserID: userId,
+              Project_Name: projectName,
+              Contractor_Type: contractorType,
+              Reason: reason,
+            });
 
-        const allSteps = respProgress["Steps"] || [];
-        const currentStep = allSteps.filter(step => step["_status"] == "InProgress");
 
-        let activityId = [];
-        for (const step of currentStep) {
-          if (step["NodeType"] == "UserTask") {
-            activityId.push([{
-              "Name": step["Name"],
-              "ActivityId": step["_activity_instance_id"]
-            }]);
-          } else if (step["NodeType"] == "Parallel") {
-            activityId.push(searchStep(step["Process"], []));
+            console.log("✅ Sent via Proxy:", submissionResult);
+
+            const recordId = submissionResult?._id;
+            const initialActivityId = submissionResult?._activity_instance_id || "";
+
+            if (!recordId) {
+              throw new Error("Missing record identifier (_id) from submission response");
+            }
+
+              const currentProcessId = submissionResult?._process_id || submissionResult?.process_id || processID;
+              if (!currentProcessId) {
+                throw new Error("Missing processID: ไม่พบ processID ในการตอบกลับ กรุณาระบุ processID ในตัวแปรการตั้งค่า");
+              }
+
+              console.log("🔄 กำลังค้นหา ActivityInstanceId ของ step ถัดไป...", { currentProcessId, recordId, initialActivityId });
+
+              // ค้นหา ActivityInstanceId ของ step ถัดไป (โดยข้าม initialActivityId ของขั้นตอนก่อนหน้า)
+              const activityInstanceId = await getNextStepActivityId(domain, accountID, currentProcessId, recordId, accessKey, initialActivityId);
+
+              console.log("🎯 ActivityInstanceId ของ step ถัดไปที่พร้อมใช้งาน:", activityInstanceId);
+
+              if (!activityInstanceId) {
+                throw new Error("ไม่สามารถระบุ ActivityInstanceId ของ step ถัดไปได้");
+              }
+
+              if (fileInput.files.length > 0) {
+                await uploadAttachments(recordId, activityInstanceId, fileInput.files);
+              }
+
+              showThankYouMessage({
+                title: "✅ ขอบคุณที่กรอกข้อมูล",
+                message: "ระบบได้รับข้อมูลของคุณเรียบร้อยแล้ว ทีมงานจะติดต่อกลับโดยเร็วที่สุด",
+                isError: false,
+                lockForm: true
+              });
+            } catch (error) {
+              console.error("❌ Error:", error);
+              showThankYouMessage({
+                title: "❌ เกิดข้อผิดพลาด",
+                message: "ระบบไม่สามารถบันทึกข้อมูลได้ในขณะนี้ กรุณาตรวจสอบการเชื่อมต่อหรือลองใหม่อีกครั้ง ถ้าหากมีข้อความแจ้งเตือนใบงานสำเร็จรบกวนไม่ส่งข้อมูลซ้ำ",
+                isError: true,
+                lockForm: true
+              });
+              submitButton.disabled = false;
+            } finally {
+              isSubmitting = false;
+              spinner.style.display = "none";
+              if (!thankYou.classList.contains("error")) {
+                form.reset();
+              }
+            }
+          });
+
+        const WORKER_BASE = "https://v45-kissflow-proxy.kissflow.workers.dev";
+
+        async function uploadAttachments(recordId, activityInstanceId, files) {
+          const formData = new FormData();
+
+          // ส่งหลายไฟล์เป็น files[] (รูปแบบที่พบบ่อยสุด)
+          for (const f of Array.from(files || [])) {
+            formData.append("files[]", f, f.name);
           }
+
+          const url = `${WORKER_BASE}/upload?recordId=${encodeURIComponent(recordId)}&activityInstanceId=${encodeURIComponent(activityInstanceId)}`;
+
+          const resp = await fetch(url, { method: "POST", body: formData });
+          const text = await resp.text();
+
+          if (!resp.ok) throw new Error(`Attachment upload failed: ${resp.status} ${text.slice(0, 300)}`);
+          return text;
         }
 
-        activityId = activityId.filter(step => Array.isArray(step) ? step.length > 0 : Boolean(step));
-
-        // หากขั้นตอน InProgress ยังไม่พร้อมในทันที ให้หน่วงเวลาแล้วลองใหม่
-        if (activityId.length === 0 && retries > 0) {
-          console.log(`ActivityId ยังไม่พร้อม กำลังลองใหม่... (เหลืออีก ${retries} ครั้ง)`);
-          await new Promise(r => setTimeout(r, 1000));
-          return await getActivityIds(domain, accountID, processID, instanceID, accessKey, retries - 1);
-        }
-
-        return activityId;
-      } catch (err) {
-        console.error("❌ Error in getActivityIds:", err);
-        throw err;
-      }
-    }
-
-    const WORKER_SUBMIT_URL = "https://v45-kissflow-proxy.kissflow.workers.dev/submit";
-
-    async function postJson(payloadObj) {
-      const response = await fetch(WORKER_SUBMIT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Accept": "application/json" },
-        body: JSON.stringify(payloadObj),
-      });
-      const text = await response.text();
-      if (!response.ok) throw new Error(`Submit failed: ${response.status} ${text.slice(0, 200)}`);
-      return JSON.parse(text);
-    }
-
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      if (isSubmitting) return;
-      isSubmitting = true;
-      spinner.style.display = "block";
-      thankYou.style.display = "none";
-      thankYou.classList.remove("error");
-
-
-      if (!userId) {
-        spinner.style.display = "none";
-        showThankYouMessage({
-          title: "⚠️ ไม่พบรหัสผู้ใช้",
-          message: "กรุณาเปิดแบบฟอร์มจากแอป LINE อีกครั้งเพื่อยืนยันตัวตนของคุณ",
-          isError: true,
-          lockForm: true
-        });
-        return;
-      }
-
-      const contractorName = document.getElementById("company").value;
-      const contactName = document.getElementById("contactName").value;
-      const projectName = document.getElementById("projectName").value;
-      const contractorType = document.getElementById("contractorType").value;
-      const contractNo = document.getElementById("contactPhone").value;
-      const lineId = document.getElementById("lineId").value;
-      const reason = document.getElementById("reason").value;
-      const payload = JSON.stringify({
-        Contractor_Name: contractorName,
-        Technician_Name: contactName,
-        Contract_No: contractNo,
-        Line_ID: lineId,
-        UserID: userId,
-        Project_Name: projectName,
-        Contractor_Type: contractorType,
-        Reason: reason,
-        // Additional_Attachment: attachments
-      });
-
-      if (fileInput.files.length === 0) {
-        spinner.style.display = "none";
-        fileInput.reportValidity();
-        return;
-      }
-
-      submitButton.disabled = true;
-
-      try {
-        const submissionResult = await postJson({
-          Contractor_Name: contractorName,
-          Technician_Name: contactName,
-          Contract_No: contractNo,
-          Line_ID: lineId,
-          UserID: userId,
-          Project_Name: projectName,
-          Contractor_Type: contractorType,
-          Reason: reason,
-        });
-
-
-        console.log("✅ Sent via Proxy:", submissionResult);
-
-        const recordId = submissionResult?._id;
-        let activityInstanceId = submissionResult?._activity_instance_id;
-
-        if (!activityInstanceId && recordId) {
-          const currentProcessId = submissionResult?._process_id || submissionResult?.process_id || processID;
-          if (!currentProcessId) {
-            throw new Error("Missing processID: ไม่พบ processID ในการตอบกลับ กรุณาระบุ processID ในตัวแปรการตั้งค่า");
-          }
-          console.log("🔄 กำลังดึง ActivityInstanceId จาก Kissflow...", { currentProcessId, recordId });
-          const activityIdList = await getActivityIds(domain, accountID, currentProcessId, recordId, accessKey);
-          console.log("Activity Ids ที่ได้:", activityIdList);
-
-          const flatList = activityIdList.flat(Infinity).filter(Boolean);
-          if (flatList.length > 0) {
-            activityInstanceId = flatList[0]?.ActivityId || flatList[0]?._activity_instance_id;
+        function showThankYouMessage({ title, message, isError, lockForm }) {
+          thankYouTitle.textContent = title;
+          thankYouBody.textContent = message;
+          thankYou.classList.toggle("error", Boolean(isError));
+          thankYou.style.display = "block";
+          if (lockForm) {
+            formSection.style.display = "none";
+          } else {
+            formSection.style.display = "block";
           }
         }
-
-        console.log("ActivityInstanceId ที่พร้อมใช้งาน:", activityInstanceId);
-
-        if (!recordId || !activityInstanceId) {
-          throw new Error("Missing record identifiers from submission response");
-        }
-
-        if (fileInput.files.length > 0) {
-          await uploadAttachments(recordId, activityInstanceId, fileInput.files);
-        }
-
-        showThankYouMessage({
-          title: "✅ ขอบคุณที่กรอกข้อมูล",
-          message: "ระบบได้รับข้อมูลของคุณเรียบร้อยแล้ว ทีมงานจะติดต่อกลับโดยเร็วที่สุด",
-          isError: false,
-          lockForm: true
-        });
-      } catch (error) {
-        console.error("❌ Error:", error);
-        showThankYouMessage({
-          title: "❌ เกิดข้อผิดพลาด",
-          message: "ระบบไม่สามารถบันทึกข้อมูลได้ในขณะนี้ กรุณาตรวจสอบการเชื่อมต่อหรือลองใหม่อีกครั้ง ถ้าหากมีข้อความแจ้งเตือนใบงานสำเร็จรบกวนไม่ส่งข้อมูลซ้ำ",
-          isError: true,
-          lockForm: true
-        });
-        submitButton.disabled = false;
-      } finally {
-        isSubmitting = false;
-        spinner.style.display = "none";
-        if (!thankYou.classList.contains("error")) {
-          form.reset();
-        }
-      }
-    });
-
-    const WORKER_BASE = "https://v45-kissflow-proxy.kissflow.workers.dev";
-
-    async function uploadAttachments(recordId, activityInstanceId, files) {
-      const formData = new FormData();
-
-      // ส่งหลายไฟล์เป็น files[] (รูปแบบที่พบบ่อยสุด)
-      for (const f of Array.from(files || [])) {
-        formData.append("files[]", f, f.name);
-      }
-
-      const url = `${WORKER_BASE}/upload?recordId=${encodeURIComponent(recordId)}&activityInstanceId=${encodeURIComponent(activityInstanceId)}`;
-
-      const resp = await fetch(url, { method: "POST", body: formData });
-      const text = await resp.text();
-
-      if (!resp.ok) throw new Error(`Attachment upload failed: ${resp.status} ${text.slice(0, 300)}`);
-      return text;
-    }
-
-    function showThankYouMessage({ title, message, isError, lockForm }) {
-      thankYouTitle.textContent = title;
-      thankYouBody.textContent = message;
-      thankYou.classList.toggle("error", Boolean(isError));
-      thankYou.style.display = "block";
-      if (lockForm) {
-        formSection.style.display = "none";
-      } else {
-        formSection.style.display = "block";
-      }
-    }
   </script>
 
 
