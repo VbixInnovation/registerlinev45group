@@ -559,48 +559,56 @@
         console.log("✅ Sent via Proxy:", submissionResult);
 
         const recordId = submissionResult?._id;
-        const processId = submissionResult?._model_id || submissionResult?._flow_id || submissionResult?._process_id;
+        const processId = submissionResult?._model_id || submissionResult?._flow_id || submissionResult?._process_id || "Contractor_Task_Revision_A00";
+        const oldStepId = submissionResult?._activity_instance_id;
+
+        console.log("✅ Sent via Proxy. Record ID:", recordId, "Initial/Draft Step ID:", oldStepId);
 
         if (!recordId) {
           throw new Error("Missing recordId from submission response");
         }
 
-          // ========================================================
-          // ตั้งเวลา Delay (3 นาที) และ Polling ตรวจสอบฟิลด์ Activity_Instance_Id
-          // ========================================================
-          const DELAY_MINUTES = 3;
-          const TOTAL_WAIT_MS = DELAY_MINUTES * 60 * 1000; // 3 นาที (300,000 ms)
-          const POLL_INTERVAL_MS = 10 * 1000;              // ตรวจสอบทุกๆ 10 วินาที
+        // ========================================================
+        // ตั้งเวลา Delay (3 นาที) และ Polling ตรวจสอบค่าจากฟิลด์ Activity_Instance_Id
+        // ========================================================
+        const DELAY_MINUTES = 3;
+        const TOTAL_WAIT_MS = DELAY_MINUTES * 60 * 1000;
+        const POLL_INTERVAL_MS = 10 * 1000; // ตรวจสอบทุกๆ 10 วินาที
 
-          let activityInstanceId = extractActivityInstanceIdFromTicket(submissionResult);
+        let activityInstanceId = extractActiveActivityInstanceId(submissionResult);
 
-          if (!activityInstanceId) {
-            console.log(`⏳ เริ่ม Delay/Polling รอข้อมูลฟิลด์ Activity_Instance_Id (สูงสุด ${DELAY_MINUTES} นาที)...`);
-            const startTime = Date.now();
+        if (!activityInstanceId) {
+          console.log(`⏳ เริ่ม Delay/Polling รอข้อมูลจากฟิลด์ Activity_Instance_Id (สูงสุด ${DELAY_MINUTES} นาที)...`);
+          const startTime = Date.now();
 
-            while (Date.now() - startTime < TOTAL_WAIT_MS) {
-              const elapsed = Date.now() - startTime;
-              const remainingSec = Math.ceil((TOTAL_WAIT_MS - elapsed) / 1000);
-              const remainingMin = Math.floor(remainingSec / 60);
-              const sec = remainingSec % 60;
-              updateSubmitStatus(`ระบบกำลังเตรียมขั้นตอนใบงาน... (รออีกประมาณ ${remainingMin}:${sec < 10 ? '0' : ''}${sec} นาที)`);
+          while (Date.now() - startTime < TOTAL_WAIT_MS) {
+            const elapsed = Date.now() - startTime;
+            const remainingSec = Math.ceil((TOTAL_WAIT_MS - elapsed) / 1000);
+            const remainingMin = Math.floor(remainingSec / 60);
+            const sec = remainingSec % 60;
+            updateSubmitStatus(`ระบบกำลังเตรียมขั้นตอนใบงาน... (รออีกประมาณ ${remainingMin}:${sec < 10 ? '0' : ''}${sec} นาที)`);
 
-              // หน่วงเวลารอบละ 10 วินาที
-              await new Promise(r => setTimeout(r, Math.min(POLL_INTERVAL_MS, TOTAL_WAIT_MS - elapsed)));
+            // หน่วงเวลารอบละ 10 วินาที
+            await new Promise(r => setTimeout(r, Math.min(POLL_INTERVAL_MS, TOTAL_WAIT_MS - elapsed)));
 
-              try {
-                const ticket = await fetchProcessItem(recordId, processId);
-                console.log("📄 ข้อมูลใบงานที่ดึงได้ล่าสุด:", ticket);
-                activityInstanceId = extractActivityInstanceIdFromTicket(ticket);
-                if (activityInstanceId) {
-                  console.log("🎯 พบ Activity_Instance_Id แล้ว:", activityInstanceId);
-                  break;
-                }
-              } catch (fetchErr) {
-                console.warn("⚠️ ลองดึงข้อมูลใบงานรอบนี้ไม่สำเร็จ กำลังลองใหม่ในรอบถัดไป...", fetchErr);
+            try {
+              const ticket = await fetchProcessItem(recordId, processId);
+              console.log("📄 ข้อมูลใบงานที่ดึงได้ล่าสุด:", ticket);
+
+              activityInstanceId = extractActiveActivityInstanceId(ticket);
+              console.log("🎯 ค่าจากฟิลด์ Activity_Instance_Id:", activityInstanceId);
+
+              if (activityInstanceId) {
+                console.log("✅ พบค่าในฟิลด์ Activity_Instance_Id แล้ว จะนำไปใช้งาน:", activityInstanceId);
+                break;
               }
+            } catch (fetchErr) {
+              console.warn("⚠️ ลองดึงข้อมูลใบงานรอบนี้ไม่สำเร็จ กำลังลองใหม่ในรอบถัดไป...", fetchErr);
             }
           }
+        } else {
+          console.log("✅ พบค่า Activity_Instance_Id จากผลลัพธ์แรกเริ่มทันที:", activityInstanceId);
+        }
 
           updateSubmitStatus("กำลังอัปโหลดเอกสารแนบ...");
 
@@ -648,20 +656,28 @@
       statusEl.textContent = text;
     }
 
-    function extractActivityInstanceIdFromTicket(ticket) {
+    function extractActiveActivityInstanceId(ticket) {
       if (!ticket || typeof ticket !== "object") return null;
 
-      // ค้นหาฟิลด์ Activity_Instance_Id ตามที่ผู้ใช้ระบุ
-      return (
-        ticket.Activity_Instance_Id ||
-        ticket["Activity_Instance_Id"] ||
-        ticket.activity_instance_id ||
-        ticket._activity_instance_id ||
-        ticket.Data?.Activity_Instance_Id ||
-        ticket.Data?.["Activity_Instance_Id"] ||
-        ticket.Data?._activity_instance_id ||
-        null
-      );
+      // ดึงค่าตรงจากฟิลด์ "Activity_Instance_Id" ตามที่ระบุ
+      let val =
+        ticket.Activity_Instance_Id ??
+        ticket["Activity_Instance_Id"] ??
+        ticket.activity_instance_id ??
+        ticket.Data?.Activity_Instance_Id ??
+        ticket.Data?.["Activity_Instance_Id"] ??
+        ticket.Data?.activity_instance_id;
+
+      // หากค่าที่ได้เป็น object (เช่น { value: "..." } หรือ { _id: "..." })
+      if (val && typeof val === "object") {
+        val = val._id || val.id || val.value || null;
+      }
+
+      if (val && typeof val === "string" && val.trim() !== "") {
+        return val.trim();
+      }
+
+      return null;
     }
 
     async function fetchProcessItem(recordId, processId) {
