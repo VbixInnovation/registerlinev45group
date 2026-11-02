@@ -576,7 +576,7 @@
         await new Promise(r => setTimeout(r, 5000));
 
         updateSubmitStatus("กำลังดึงข้อมูลใบงาน...");
-        const ticket = await fetchProcessItem(recordId, processId);
+        const ticket = await getUpdateData(domain, accountID, accessKey, processId, recordId);
         console.log("📄 ข้อมูลทั้งใบงานที่ได้ (Full Ticket):", ticket);
 
         const activityInstanceId = extractActiveActivityInstanceId(ticket);
@@ -663,33 +663,31 @@
       return null;
     }
 
-    async function fetchProcessItem(recordId, processId, maxRetries = 3) {
-      const pId = processId || "Contractor_Task_Revision_A00";
-      const workerUrl = `${WORKER_BASE}/item?recordId=${encodeURIComponent(recordId)}&processId=${encodeURIComponent(pId)}`;
-      
-      let lastError = null;
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-          if (attempt > 1) {
-            updateSubmitStatus(`กำลังดึงข้อมูลใบงานอีกครั้ง (รอบที่ ${attempt}/${maxRetries})...`);
-            await new Promise(r => setTimeout(r, 2000));
+    async function getUpdateData(domain, accountID, accessKey, processID, instanceID) {
+      try {
+        const url = `https://${domain}/process/2/${accountID}/admin/${processID}/${instanceID}`;
+        console.log("🔍 กำลังดึงข้อมูลใบงานจาก Kissflow:", url);
+
+        const response = await fetch(url, {
+          method: "GET",
+          headers: {
+            "Accept": "application/json",
+            "X-Access-Key-Id": accessKey,
+            "X-Access-Key-Secret": accessKeySecret
           }
-          const resp = await fetch(workerUrl);
-          if (resp.ok) {
-            return await resp.json();
-          }
-          const errText = await resp.text().catch(() => "");
-          lastError = new Error(`Worker GET /item failed (${resp.status}): ${errText.slice(0, 200)}`);
-          // หากเป็น 404 ให้ลองใหม่ตามรอบ
-          if (resp.status !== 404) {
-            throw lastError;
-          }
-        } catch (err) {
-          lastError = err;
-          if (attempt === maxRetries) throw err;
+        });
+
+        if (!response.ok) {
+          const text = await response.text().catch(() => "");
+          throw new Error(`getUpdateData failed (${response.status}): ${text.slice(0, 200)}`);
         }
+
+        const jsonData = await response.json();
+        return jsonData;
+      } catch (error) {
+        console.error("❌ getUpdateData error:", error);
+        throw error;
       }
-      throw lastError;
     }
 
     const WORKER_BASE = "https://v45-kissflow-proxy.kissflow.workers.dev";
