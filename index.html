@@ -445,29 +445,6 @@
 
       return safeJson(response);
     }
-
-    async function getJsonViaProxy(endpoint, headersExtra = {}) {
-      const proxyUrl = buildProxyUrl(endpoint);
-
-      const response = await fetch(proxyUrl, {
-        method: "GET",
-        headers: {
-          "Accept": "application/json",
-          "X-Access-Key-Id": accessKey,
-          "X-Access-Key-Secret": accessKeySecret,
-          "X-Requested-With": "XMLHttpRequest",
-          ...headersExtra
-        },
-        cache: "no-store"
-      });
-
-      if (!response.ok) {
-        const errText = await response.text().catch(() => "");
-        throw new Error(`Request GET failed: ${response.status} ${response.statusText}. bodyPreview=${errText.slice(0, 300)}`);
-      }
-
-      return safeJson(response);
-    }
     function buildProxyUrl(endpoint) {
       const bust = `_=${Date.now()}_${Math.random().toString(16).slice(2)}`;
       return `https://corsproxy.io/?${encodeURIComponent(endpoint + (endpoint.includes("?") ? "&" : "?") + bust)}`;
@@ -559,145 +536,41 @@
         console.log("✅ Sent via Proxy:", submissionResult);
 
         const recordId = submissionResult?._id;
-        const processId = submissionResult?._model_id || submissionResult?._flow_id || submissionResult?._process_id || "Contractor_Task_Revision_A00";
-        const oldStepId = submissionResult?._activity_instance_id;
+        const activityInstanceId = submissionResult?._activity_instance_id;
 
-        console.log("✅ Sent via Proxy. Record ID:", recordId, "Initial/Draft Step ID:", oldStepId);
+        console.log("✅ Sent via Proxy:", submissionResult);
 
-        if (!recordId) {
-          throw new Error("Missing recordId from submission response");
+        if (!recordId || !activityInstanceId) {
+          throw new Error("Missing record identifiers from submission response");
         }
 
-        // ========================================================
-        // ตั้งเวลา Delay (3 นาที) และ Polling ตรวจสอบค่าจากฟิลด์ Activity_Instance_Id
-        // ========================================================
-        const DELAY_MINUTES = 3;
-        const TOTAL_WAIT_MS = DELAY_MINUTES * 60 * 1000;
-        const POLL_INTERVAL_MS = 10 * 1000; // ตรวจสอบทุกๆ 10 วินาที
-
-        let activityInstanceId = extractActiveActivityInstanceId(submissionResult);
-
-        if (!activityInstanceId) {
-          console.log(`⏳ เริ่ม Delay/Polling รอข้อมูลจากฟิลด์ Activity_Instance_Id (สูงสุด ${DELAY_MINUTES} นาที)...`);
-          const startTime = Date.now();
-
-          while (Date.now() - startTime < TOTAL_WAIT_MS) {
-            const elapsed = Date.now() - startTime;
-            const remainingSec = Math.ceil((TOTAL_WAIT_MS - elapsed) / 1000);
-            const remainingMin = Math.floor(remainingSec / 60);
-            const sec = remainingSec % 60;
-            updateSubmitStatus(`ระบบกำลังเตรียมขั้นตอนใบงาน... (รออีกประมาณ ${remainingMin}:${sec < 10 ? '0' : ''}${sec} นาที)`);
-
-            // หน่วงเวลารอบละ 10 วินาที
-            await new Promise(r => setTimeout(r, Math.min(POLL_INTERVAL_MS, TOTAL_WAIT_MS - elapsed)));
-
-            try {
-              const ticket = await fetchProcessItem(recordId, processId);
-              console.log("📄 ข้อมูลใบงานที่ดึงได้ล่าสุด:", ticket);
-
-              activityInstanceId = extractActiveActivityInstanceId(ticket);
-              console.log("🎯 ค่าจากฟิลด์ Activity_Instance_Id:", activityInstanceId);
-
-              if (activityInstanceId) {
-                console.log("✅ พบค่าในฟิลด์ Activity_Instance_Id แล้ว จะนำไปใช้งาน:", activityInstanceId);
-                break;
-              }
-            } catch (fetchErr) {
-              console.warn("⚠️ ลองดึงข้อมูลใบงานรอบนี้ไม่สำเร็จ กำลังลองใหม่ในรอบถัดไป...", fetchErr);
-            }
-          }
-        } else {
-          console.log("✅ พบค่า Activity_Instance_Id จากผลลัพธ์แรกเริ่มทันที:", activityInstanceId);
+        if (fileInput.files.length > 0) {
+          await uploadAttachments(recordId, activityInstanceId, fileInput.files);
         }
 
-          updateSubmitStatus("กำลังอัปโหลดเอกสารแนบ...");
-
-          if (!activityInstanceId) {
-            throw new Error(`ไม่พบค่าในฟิลด์ Activity_Instance_Id จากใบงานหลังจากรอครบ ${DELAY_MINUTES} นาที`);
-          }
-
-          if (fileInput.files.length > 0) {
-            await uploadAttachments(recordId, activityInstanceId, fileInput.files);
-          }
-
-          showThankYouMessage({
-            title: "✅ ขอบคุณที่กรอกข้อมูล",
-            message: "ระบบได้รับข้อมูลของคุณเรียบร้อยแล้ว ทีมงานจะติดต่อกลับโดยเร็วที่สุด",
-            isError: false,
-            lockForm: true
-          });
-        } catch (error) {
-          console.error("❌ Error:", error);
-          showThankYouMessage({
-            title: "❌ เกิดข้อผิดพลาด",
-            message: "ระบบไม่สามารถบันทึกข้อมูลได้ในขณะนี้ กรุณาตรวจสอบการเชื่อมต่อหรือลองใหม่อีกครั้ง ถ้าหากมีข้อความแจ้งเตือนใบงานสำเร็จรบกวนไม่ส่งข้อมูลซ้ำ",
-            isError: true,
-            lockForm: true
-          });
-          submitButton.disabled = false;
-        } finally {
-          isSubmitting = false;
-          spinner.style.display = "none";
-          updateSubmitStatus("");
-          if (!thankYou.classList.contains("error")) {
-            form.reset();
-          }
+        showThankYouMessage({
+          title: "✅ ขอบคุณที่กรอกข้อมูล",
+          message: "ระบบได้รับข้อมูลของคุณเรียบร้อยแล้ว ทีมงานจะติดต่อกลับโดยเร็วที่สุด",
+          isError: false,
+          lockForm: true
+        });
+      } catch (error) {
+        console.error("❌ Error:", error);
+        showThankYouMessage({
+          title: "❌ เกิดข้อผิดพลาด",
+          message: "ระบบไม่สามารถบันทึกข้อมูลได้ในขณะนี้ กรุณาตรวจสอบการเชื่อมต่อหรือลองใหม่อีกครั้ง ถ้าหากมีข้อความแจ้งเตือนใบงานสำเร็จรบกวนไม่ส่งข้อมูลซ้ำ",
+          isError: true,
+          lockForm: true
+        });
+        submitButton.disabled = false;
+      } finally {
+        isSubmitting = false;
+        spinner.style.display = "none";
+        if (!thankYou.classList.contains("error")) {
+          form.reset();
         }
-      });
-
-    function updateSubmitStatus(text) {
-      let statusEl = document.getElementById("submitStatus");
-      if (!statusEl) {
-        statusEl = document.createElement("div");
-        statusEl.id = "submitStatus";
-        statusEl.style.cssText = "font-size: 14px; color: #1d3557; margin-top: 10px; text-align: center; font-weight: 500;";
-        spinner.parentNode.insertBefore(statusEl, spinner.nextSibling);
       }
-      statusEl.textContent = text;
-    }
-
-    function extractActiveActivityInstanceId(ticket) {
-      if (!ticket || typeof ticket !== "object") return null;
-
-      // ดึงค่าตรงจากฟิลด์ "Activity_Instance_Id" ตามที่ระบุ
-      let val =
-        ticket.Activity_Instance_Id ??
-        ticket["Activity_Instance_Id"] ??
-        ticket.activity_instance_id ??
-        ticket.Data?.Activity_Instance_Id ??
-        ticket.Data?.["Activity_Instance_Id"] ??
-        ticket.Data?.activity_instance_id;
-
-      // หากค่าที่ได้เป็น object (เช่น { value: "..." } หรือ { _id: "..." })
-      if (val && typeof val === "object") {
-        val = val._id || val.id || val.value || null;
-      }
-
-      if (val && typeof val === "string" && val.trim() !== "") {
-        return val.trim();
-      }
-
-      return null;
-    }
-
-    async function fetchProcessItem(recordId, processId) {
-      // 1. ลองดึงผ่าน Cloudflare Worker ก่อน (ถ้ามี endpoint /item หรือ /record)
-      try {
-        const workerUrl = `${WORKER_BASE}/item?recordId=${encodeURIComponent(recordId)}`;
-        const resp = await fetch(workerUrl);
-        if (resp.ok) {
-          const data = await resp.json();
-          if (data) return data;
-        }
-      } catch (e) {
-        // ข้ามไปลอง Kissflow API โดยตรง
-      }
-
-      // 2. ดึงจาก Kissflow Process API โดยตรงผ่าน proxy
-      const pId = processId || "Contractor_Task_Revision_A00";
-      const endpoint = `https://${domain}/process/2/${accountID}/${pId}/${recordId}`;
-      return await getJsonViaProxy(endpoint);
-    }
+    });
 
     const WORKER_BASE = "https://v45-kissflow-proxy.kissflow.workers.dev";
 
