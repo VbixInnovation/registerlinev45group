@@ -474,16 +474,7 @@
         const safePayload = payloadObj || {};
         const recordData = {
           Contractor_Name: safePayload.Contractor_Name || "",
-          Technician_Name: safePayload.Technician_Name || "",
-          Contract_No: safePayload.Contract_No || "",
-          Line_ID: safePayload.Line_ID || "",
-          UserID: safePayload.UserID || "",
-          Project_Name: safePayload.Project_Name || "",
-          Contractor_Type: safePayload.Contractor_Type || "",
-          Reason: safePayload.Reason || "",
-          Status: status || "",
-          Response: typeof responseText === "string" ? responseText : JSON.stringify(responseText || ""),
-          Respone: typeof responseText === "string" ? responseText : JSON.stringify(responseText || "")
+          Response: typeof responseText === "string" ? responseText : JSON.stringify(responseText || "")
         };
 
         console.log("💾 Sending backup record to Dataform:", recordData);
