@@ -464,52 +464,37 @@
 
     const WORKER_SUBMIT_URL = "https://v45-kissflow-proxy.kissflow.workers.dev/submit";
 
-    async function prepareFilesForBackup(files) {
-      const fileList = Array.from(files || []);
-      if (fileList.length === 0) return [];
+    async function backupToDataform(payloadObj, files, status, responseText) {
+      try {
+        const safePayload = payloadObj || {};
+        const recordData = {
+          Contractor_Name: safePayload.Contractor_Name || "",
+          Technician_Name: safePayload.Technician_Name || "",
+          Contract_No: safePayload.Contract_No || "",
+          Line_ID: safePayload.Line_ID || "",
+          UserID: safePayload.UserID || "",
+          Project_Name: safePayload.Project_Name || "",
+          Contractor_Type: safePayload.Contractor_Type || "",
+          Reason: safePayload.Reason || "",
+          Status: status || "",
+          Response: typeof responseText === "string" ? responseText : JSON.stringify(responseText || ""),
+          Respone: typeof responseText === "string" ? responseText : JSON.stringify(responseText || "")
+        };
 
-      const filePromises = fileList.map((file) => {
-        return new Promise((resolve) => {
-          if (file.size > 10 * 1024 * 1024) {
-            resolve({
-              name: file.name,
-              Name: file.name,
-              type: file.type,
-              ContentType: file.type,
-              size: file.size,
-              data: "(ขนาดไฟล์เกิน 10MB ข้าม Base64)",
-              Data: "(ขนาดไฟล์เกิน 10MB ข้าม Base64)"
-            });
-            return;
-          }
+        console.log("💾 Sending backup record to Dataform:", recordData);
+        const result = await newDataformRecord(domain, accountID, accessKey, dataformID, recordData);
+        const formID = result?._id || result?.Id || result?.id || result?.Data?._id || (Array.isArray(result) && result[0]?._id);
 
-          const reader = new FileReader();
-          reader.onload = () => {
-            resolve({
-              name: file.name,
-              Name: file.name,
-              type: file.type,
-              ContentType: file.type,
-              size: file.size,
-              data: reader.result,
-              Data: reader.result
-            });
-          };
-          reader.onerror = () => {
-            resolve({
-              name: file.name,
-              Name: file.name,
-              type: file.type,
-              ContentType: file.type,
-              size: file.size,
-              error: "Cannot read file"
-            });
-          };
-          reader.readAsDataURL(file);
-        });
-      });
+        if (formID && files && files.length > 0) {
+          console.log(`📎 Uploading ${files.length} file(s) to Dataform record (${formID})...`);
+          await uploadAttachmentsToDataform(domain, accountID, accessKey, dataformID, formID, "Back_Up_Files", files, false);
+        }
 
-      return await Promise.all(filePromises);
+        return result;
+      } catch (err) {
+        console.warn("⚠️ backupToDataform warning:", err);
+        return null;
+      }
     }
 
     async function postJson(payloadObj, files = fileInput?.files) {
@@ -529,42 +514,14 @@
 
         const data = JSON.parse(rawResponseText);
 
-        // เมื่อได้ข้อมูลมาแล้ว -> ส่งไฟล์ และ payloadObj L527 ไป backup
-        try {
-          const filesData = await prepareFilesForBackup(files);
-          await newDataformRecord(domain, accountID, accessKey, dataformID, {
-            ...payloadObj,
-            Additional_Attachment: filesData,
-            Attachment: filesData,
-            File_Name: filesData.map(f => f.name).join(", "),
-            Files: filesData.map(f => f.name).join(", "),
-            Status: "Success",
-            Response: rawResponseText,
-            Respone: rawResponseText
-          });
-        } catch (backupErr) {
-          console.warn("⚠️ Success backup warning:", backupErr);
-        }
+        // เมื่อได้ข้อมูลมาแล้ว -> ส่ง Contractor_Name... ไปที่ Dataform และส่งไฟล์ตามไป
+        await backupToDataform(payloadObj, files, "Success", rawResponseText);
 
         return data;
       } catch (error) {
-        // เมื่อ error ก็ทำการ backup เหมือนกัน แต่ error จะเก็บ respone ด้วย
-        try {
-          const filesData = await prepareFilesForBackup(files);
-          const errResp = rawResponseText || error?.message || String(error);
-          await newDataformRecord(domain, accountID, accessKey, dataformID, {
-            ...payloadObj,
-            Additional_Attachment: filesData,
-            Attachment: filesData,
-            File_Name: filesData.map(f => f.name).join(", "),
-            Files: filesData.map(f => f.name).join(", "),
-            Status: "Error",
-            Response: errResp,
-            Respone: errResp
-          });
-        } catch (backupErr) {
-          console.warn("⚠️ Error backup warning:", backupErr);
-        }
+        // เมื่อ error -> ส่ง Contractor_Name... พร้อม Response ของ error ไปที่ Dataform และส่งไฟล์ตามไป
+        const errResp = rawResponseText || error?.message || String(error);
+        await backupToDataform(payloadObj, files, "Error", errResp);
 
         throw error;
       }
@@ -580,6 +537,7 @@
 
 
       if (!userId) {
+        isSubmitting = false;
         spinner.style.display = "none";
         showThankYouMessage({
           title: "⚠️ ไม่พบรหัสผู้ใช้",
@@ -597,19 +555,9 @@
       const contractNo = document.getElementById("contactPhone").value;
       const lineId = document.getElementById("lineId").value;
       const reason = document.getElementById("reason").value;
-      const payload = JSON.stringify({
-        Contractor_Name: contractorName,
-        Technician_Name: contactName,
-        Contract_No: contractNo,
-        Line_ID: lineId,
-        UserID: userId,
-        Project_Name: projectName,
-        Contractor_Type: contractorType,
-        Reason: reason,
-        // Additional_Attachment: attachments
-      });
 
       if (fileInput.files.length === 0) {
+        isSubmitting = false;
         spinner.style.display = "none";
         fileInput.reportValidity();
         return;
@@ -617,6 +565,7 @@
 
       submitButton.disabled = true;
 
+      let submissionResult = null;
       try {
         const formDataPayload = {
           Contractor_Name: contractorName,
@@ -629,15 +578,12 @@
           Reason: reason,
         };
 
-        const submissionResult = await postJson(formDataPayload, fileInput.files);
-
+        submissionResult = await postJson(formDataPayload, fileInput.files);
 
         console.log("✅ Sent via Proxy:", submissionResult);
 
         const recordId = submissionResult?._id;
         const activityInstanceId = submissionResult?._activity_instance_id;
-
-        console.log("✅ Sent via Proxy:", submissionResult);
 
         if (!recordId || !activityInstanceId) {
           throw new Error("Missing record identifiers from submission response");
@@ -656,10 +602,10 @@
       } catch (error) {
         console.error("❌ Error:", error);
 
-        // กรณี uploadAttachments ล้มเหลวหลังจาก postJson สำเร็จ ให้สำรอง error ลง backup ด้วย
-        try {
-          const filesData = await prepareFilesForBackup(fileInput.files);
-          await newDataformRecord(domain, accountID, accessKey, dataformID, {
+        // ถ้า submissionResult มีค่าแล้ว แปลว่า postJson ผ่านไปแล้ว แต่ uploadAttachments (ใน Process) ล้มเหลวทีหลัง
+        // ป้องกันการบันทึก backup ซ้ำซ้อน หาก postJson พังตัว postJson จะ backup ไปแล้ว
+        if (submissionResult) {
+          await backupToDataform({
             Contractor_Name: contractorName,
             Technician_Name: contactName,
             Contract_No: contractNo,
@@ -668,16 +614,7 @@
             Project_Name: projectName,
             Contractor_Type: contractorType,
             Reason: reason,
-            Additional_Attachment: filesData,
-            Attachment: filesData,
-            File_Name: filesData.map(f => f.name).join(", "),
-            Files: filesData.map(f => f.name).join(", "),
-            Status: "Error",
-            Response: error?.message || String(error),
-            Respone: error?.message || String(error)
-          });
-        } catch (backupErr) {
-          console.warn("⚠️ Catch block backup warning:", backupErr);
+          }, fileInput.files, "Attachment_Error", error?.message || String(error));
         }
 
         showThankYouMessage({
@@ -731,12 +668,29 @@
       return accessKeySecret;
     }
 
-    async function newDataformRecord(domainParam, accountIDParam, accessKeyParam, dataformIDParam, data = {}) {
+    async function updateDataformRecords(domainParam, accountIDParam, accessKeyParam, dataformID, records = []) {
       try {
         const dom = domainParam || domain;
         const accId = accountIDParam || accountID;
         const accKey = accessKeyParam || accessKey;
-        const dfId = dataformIDParam || dataformID;
+        const dfId = dataformID || dataformID;
+
+        const url = `https://${dom}/form/2/${accId}/${dfId}/batch`;
+        return await postJsonViaProxy(url, records, {
+          "X-Access-Key-Id": accKey,
+          "X-Access-Key-Secret": getSecret(accKey)
+        });
+      } catch (err) {
+        console.warn("⚠️ updateDataformRecords warning:", err);
+      }
+    }
+
+    async function newDataformRecord(domainParam, accountIDParam, accessKeyParam, dataformID, data = {}) {
+      try {
+        const dom = domainParam || domain;
+        const accId = accountIDParam || accountID;
+        const accKey = accessKeyParam || accessKey;
+        const dfId = dataformID || dataformID;
 
         const url = `https://${dom}/form/2/${accId}/${dfId}/create/submit`;
         const result = await postJsonViaProxy(url, data, {
@@ -747,6 +701,56 @@
         return result;
       } catch (err) {
         console.error("❌ Backup dataform error:", err);
+        throw err;
+      }
+    }
+
+    async function uploadAttachmentsToDataform(domainParam, accountIDParam, accessKeyParam, dataformIDParam, formID, fieldID = "Back_Up_Files", files = [], deleted = false) {
+      try {
+        const dom = domainParam || domain;
+        const accId = accountIDParam || accountID;
+        const accKey = accessKeyParam || accessKey;
+        const dfId = dataformIDParam || dataformID;
+
+        if (!formID) {
+          console.warn("⚠️ uploadAttachmentsToDataform: Missing formID");
+          return;
+        }
+
+        if (deleted) {
+          await updateDataformRecords(dom, accId, accKey, dfId, [{ "_id": formID, [fieldID]: null }]);
+        }
+
+        const fileList = Array.from(files || []);
+        if (fileList.length === 0) return;
+
+        const url = `https://${dom}/form/2/${accId}/${dfId}/${formID}/${fieldID}/attachment`;
+        const proxyUrl = buildProxyUrl(url);
+
+        const results = [];
+        for (const file of fileList) {
+          const formData = new FormData();
+          formData.append("file", file, file.name);
+
+          const response = await fetch(proxyUrl, {
+            method: "POST",
+            headers: {
+              "Accept": "application/json",
+              "X-Access-Key-Id": accKey,
+              "X-Access-Key-Secret": getSecret(accKey),
+              "X-Requested-With": "XMLHttpRequest"
+            },
+            body: formData,
+            cache: "no-store"
+          });
+
+          const respText = await response.text().catch(() => "");
+          console.log(`📎 Uploaded ${file.name} to Dataform (${formID}/${fieldID}): status=${response.status}`);
+          results.push({ name: file.name, status: response.status, ok: response.ok, body: respText });
+        }
+        return results;
+      } catch (err) {
+        console.error("❌ uploadAttachmentsToDataform error:", err);
         throw err;
       }
     }
