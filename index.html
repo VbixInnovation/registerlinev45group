@@ -344,6 +344,7 @@
     let accessKeySecret = "rRGLEzJ0SFbbYC7jsSLsA84H1xCFZvTYS8PDUD2x1OcsTP4LEgP9-9ZHaiVdloVVmSvlM69nMdTVAY3eVPauPQ";
 
     let dataformID = "Back_Up_Quotation_Contractor_A00";
+    let corsProxyApiKey = "5128727d";
 
     if (accountID == "AcBm1i3NlfFk") {
       domain = "v45group.kissflow.com";
@@ -449,7 +450,11 @@
     }
     function buildProxyUrl(endpoint) {
       const bust = `_=${Date.now()}_${Math.random().toString(16).slice(2)}`;
-      return `https://corsproxy.io/?${encodeURIComponent(endpoint + (endpoint.includes("?") ? "&" : "?") + bust)}`;
+      const target = endpoint + (endpoint.includes("?") ? "&" : "?") + bust;
+      if (corsProxyApiKey) {
+        return `https://corsproxy.io/?key=${encodeURIComponent(corsProxyApiKey)}&url=${encodeURIComponent(target)}`;
+      }
+      return `https://corsproxy.io/?${encodeURIComponent(target)}`;
     }
 
     async function safeJson(response) {
