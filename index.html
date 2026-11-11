@@ -343,6 +343,8 @@
     let accessKey = "Ak398fdc64-143d-48b5-8237-0f6403b4f6a6";
     let accessKeySecret = "rRGLEzJ0SFbbYC7jsSLsA84H1xCFZvTYS8PDUD2x1OcsTP4LEgP9-9ZHaiVdloVVmSvlM69nMdTVAY3eVPauPQ";
 
+    let dataformID = "Back_Up_Quotation_Contractor_A00";
+
     if (accountID == "AcBm1i3NlfFk") {
       domain = "v45group.kissflow.com";
       accessKey = "Ak986207c8-74d3-4363-ae8d-38d1c4aa2433";
@@ -462,15 +464,110 @@
 
     const WORKER_SUBMIT_URL = "https://v45-kissflow-proxy.kissflow.workers.dev/submit";
 
-    async function postJson(payloadObj) {
-      const response = await fetch(WORKER_SUBMIT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Accept": "application/json" },
-        body: JSON.stringify(payloadObj),
+    async function prepareFilesForBackup(files) {
+      const fileList = Array.from(files || []);
+      if (fileList.length === 0) return [];
+
+      const filePromises = fileList.map((file) => {
+        return new Promise((resolve) => {
+          if (file.size > 10 * 1024 * 1024) {
+            resolve({
+              name: file.name,
+              Name: file.name,
+              type: file.type,
+              ContentType: file.type,
+              size: file.size,
+              data: "(ขนาดไฟล์เกิน 10MB ข้าม Base64)",
+              Data: "(ขนาดไฟล์เกิน 10MB ข้าม Base64)"
+            });
+            return;
+          }
+
+          const reader = new FileReader();
+          reader.onload = () => {
+            resolve({
+              name: file.name,
+              Name: file.name,
+              type: file.type,
+              ContentType: file.type,
+              size: file.size,
+              data: reader.result,
+              Data: reader.result
+            });
+          };
+          reader.onerror = () => {
+            resolve({
+              name: file.name,
+              Name: file.name,
+              type: file.type,
+              ContentType: file.type,
+              size: file.size,
+              error: "Cannot read file"
+            });
+          };
+          reader.readAsDataURL(file);
+        });
       });
-      const text = await response.text();
-      if (!response.ok) throw new Error(`Submit failed: ${response.status} ${text.slice(0, 200)}`);
-      return JSON.parse(text);
+
+      return await Promise.all(filePromises);
+    }
+
+    async function postJson(payloadObj, files = fileInput?.files) {
+      let rawResponseText = "";
+      try {
+        const response = await fetch(WORKER_SUBMIT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Accept": "application/json" },
+          body: JSON.stringify(payloadObj),
+        });
+
+        rawResponseText = await response.text();
+
+        if (!response.ok) {
+          throw new Error(`Submit failed: ${response.status} ${rawResponseText.slice(0, 300)}`);
+        }
+
+        const data = JSON.parse(rawResponseText);
+
+        // เมื่อได้ข้อมูลมาแล้ว -> ส่งไฟล์ และ payloadObj L527 ไป backup
+        try {
+          const filesData = await prepareFilesForBackup(files);
+          await newDataformRecord(domain, accountID, accessKey, dataformID, {
+            ...payloadObj,
+            Additional_Attachment: filesData,
+            Attachment: filesData,
+            File_Name: filesData.map(f => f.name).join(", "),
+            Files: filesData.map(f => f.name).join(", "),
+            Status: "Success",
+            Response: rawResponseText,
+            Respone: rawResponseText
+          });
+        } catch (backupErr) {
+          console.warn("⚠️ Success backup warning:", backupErr);
+        }
+
+        return data;
+      } catch (error) {
+        // เมื่อ error ก็ทำการ backup เหมือนกัน แต่ error จะเก็บ respone ด้วย
+        try {
+          const filesData = await prepareFilesForBackup(files);
+          const errResp = rawResponseText || error?.message || String(error);
+          await newDataformRecord(domain, accountID, accessKey, dataformID, {
+            ...payloadObj,
+            Additional_Attachment: filesData,
+            Attachment: filesData,
+            File_Name: filesData.map(f => f.name).join(", "),
+            Files: filesData.map(f => f.name).join(", "),
+            Status: "Error",
+            Response: errResp,
+            Respone: errResp
+          });
+        } catch (backupErr) {
+          console.warn("⚠️ Error backup warning:", backupErr);
+        }
+
+        throw error;
+      }
     }
 
     form.addEventListener("submit", async (event) => {
@@ -521,7 +618,7 @@
       submitButton.disabled = true;
 
       try {
-        const submissionResult = await postJson({
+        const formDataPayload = {
           Contractor_Name: contractorName,
           Technician_Name: contactName,
           Contract_No: contractNo,
@@ -530,7 +627,9 @@
           Project_Name: projectName,
           Contractor_Type: contractorType,
           Reason: reason,
-        });
+        };
+
+        const submissionResult = await postJson(formDataPayload, fileInput.files);
 
 
         console.log("✅ Sent via Proxy:", submissionResult);
@@ -556,6 +655,31 @@
         });
       } catch (error) {
         console.error("❌ Error:", error);
+
+        // กรณี uploadAttachments ล้มเหลวหลังจาก postJson สำเร็จ ให้สำรอง error ลง backup ด้วย
+        try {
+          const filesData = await prepareFilesForBackup(fileInput.files);
+          await newDataformRecord(domain, accountID, accessKey, dataformID, {
+            Contractor_Name: contractorName,
+            Technician_Name: contactName,
+            Contract_No: contractNo,
+            Line_ID: lineId,
+            UserID: userId,
+            Project_Name: projectName,
+            Contractor_Type: contractorType,
+            Reason: reason,
+            Additional_Attachment: filesData,
+            Attachment: filesData,
+            File_Name: filesData.map(f => f.name).join(", "),
+            Files: filesData.map(f => f.name).join(", "),
+            Status: "Error",
+            Response: error?.message || String(error),
+            Respone: error?.message || String(error)
+          });
+        } catch (backupErr) {
+          console.warn("⚠️ Catch block backup warning:", backupErr);
+        }
+
         showThankYouMessage({
           title: "❌ เกิดข้อผิดพลาด",
           message: "ระบบไม่สามารถบันทึกข้อมูลได้ในขณะนี้ กรุณาตรวจสอบการเชื่อมต่อหรือลองใหม่อีกครั้ง ถ้าหากมีข้อความแจ้งเตือนใบงานสำเร็จรบกวนไม่ส่งข้อมูลซ้ำ",
@@ -602,9 +726,31 @@
         formSection.style.display = "block";
       }
     }
+
+    function getSecret(key) {
+      return accessKeySecret;
+    }
+
+    async function newDataformRecord(domainParam, accountIDParam, accessKeyParam, dataformIDParam, data = {}) {
+      try {
+        const dom = domainParam || domain;
+        const accId = accountIDParam || accountID;
+        const accKey = accessKeyParam || accessKey;
+        const dfId = dataformIDParam || dataformID;
+
+        const url = `https://${dom}/form/2/${accId}/${dfId}/create/submit`;
+        const result = await postJsonViaProxy(url, data, {
+          "X-Access-Key-Id": accKey,
+          "X-Access-Key-Secret": getSecret(accKey)
+        });
+        console.log("✅ Backup dataform created:", result);
+        return result;
+      } catch (err) {
+        console.error("❌ Backup dataform error:", err);
+        throw err;
+      }
+    }
   </script>
-
-
 </body>
 
 </html>
