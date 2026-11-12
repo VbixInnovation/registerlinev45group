@@ -469,11 +469,27 @@
 
     const WORKER_SUBMIT_URL = "https://v45-kissflow-proxy.kissflow.workers.dev/submit";
 
-    async function backupToDataform(payloadObj, files, status, responseText) {
+    async function backupToDataform(payloadObj, files, status, responseText, instanceId = "") {
       try {
         const safePayload = payloadObj || {};
+
+        let finalInstanceId = instanceId || safePayload.Instance_Id_Contractor_Revision || safePayload._id || "";
+        if (!finalInstanceId && responseText) {
+          try {
+            const parsed = typeof responseText === "string" ? JSON.parse(responseText) : responseText;
+            finalInstanceId = parsed?._id || "";
+          } catch (_) {}
+        }
+
+        const now = new Date();
+        const requestDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
         const recordData = {
           Contractor_Name: safePayload.Contractor_Name || "",
+          Request_Date: requestDate,
+          Project_Name: safePayload.Project_Name || "",
+          Contractor_Type: safePayload.Contractor_Type || "",
+          Instance_Id_Contractor_Revision: finalInstanceId,
           Response: typeof responseText === "string" ? responseText : JSON.stringify(responseText || "")
         };
 
@@ -509,15 +525,16 @@
         }
 
         const data = JSON.parse(rawResponseText);
+        const instanceId = data?._id || "";
 
         // เมื่อได้ข้อมูลมาแล้ว -> ส่ง Contractor_Name... ไปที่ Dataform และส่งไฟล์ตามไป
-        await backupToDataform(payloadObj, files, "Success", rawResponseText);
+        await backupToDataform(payloadObj, files, "Success", rawResponseText, instanceId);
 
         return data;
       } catch (error) {
         // เมื่อ error -> ส่ง Contractor_Name... พร้อม Response ของ error ไปที่ Dataform และส่งไฟล์ตามไป
         const errResp = rawResponseText || error?.message || String(error);
-        await backupToDataform(payloadObj, files, "Error", errResp);
+        await backupToDataform(payloadObj, files, "Error", errResp, "");
 
         throw error;
       }
@@ -610,7 +627,7 @@
             Project_Name: projectName,
             Contractor_Type: contractorType,
             Reason: reason,
-          }, fileInput.files, "Attachment_Error", error?.message || String(error));
+          }, fileInput.files, "Attachment_Error", error?.message || String(error), submissionResult?._id || "");
         }
 
         showThankYouMessage({
